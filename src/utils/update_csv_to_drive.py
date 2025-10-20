@@ -68,8 +68,9 @@ def update_csv_paths(csv_file_path, drive_base_url):
             # Extract the part after 'datasets/idnet/'
             relative_path = old_path.split('datasets/idnet/')[1]
             
-            # Create new Google Drive URL
-            new_path = f"{drive_base_url}/{relative_path}"
+            # For now, we'll create a placeholder URL that needs to be updated manually
+            # with actual Google Drive file IDs
+            new_path = f"PLACEHOLDER_DRIVE_URL_FOR_{relative_path.replace('/', '_')}"
             
             # Update the dataframe
             df.at[idx, 'image_path'] = new_path
