@@ -2,20 +2,48 @@
 
 This directory stores all trained models for the Identity Document Fraud Detection project.
 
+## 📁 Directory Structure
+
+```
+models/
+├── checkpoints/          # Model checkpoints saved during training
+│                        # (e.g., best model, epoch checkpoints)
+└── README.md            # This file
+```
+
+## 📂 Checkpoints Directory
+
+The `checkpoints/` directory contains:
+- **Training Checkpoints**: Model states saved during training
+- **Best Models**: Best performing models based on validation metrics
+- **Epoch Saves**: Regular saves at specific epochs for recovery
+- **Experiment Tracking**: Models from different experiments and configurations
+
+### Checkpoint Naming Convention
+- `{model_name}_epoch_{epoch}_val_acc_{acc}.pth` - PyTorch models
+- `{model_name}_best.pth` - Best model based on validation performance
+- `{model_name}_latest.pth` - Latest checkpoint for recovery
+
 ## 🎯 Model Types
 
-### Binary Classification Models
+### Document Type Classification Models (Current Focus)
+- **Document Type Detection**: Models that classify document types
+- **Use Case**: Identify if document is Passport, ID Card, or Driver's License
+- **Target**: `document_type` column (3 classes)
+- **Architectures**: ResNet18, Vision Transformer (ViT), EfficientNet
+
+### Binary Classification Models (Future)
 - **Real vs Fake Detection**: Models that classify documents as authentic or forged
 - **Use Case**: General fraud detection across all document types
 - **Target**: `is_real` column (1=real, 0=fake)
 
-### Multi-Class Classification Models
+### Multi-Class Classification Models (Future)
 - **Fraud Type Detection**: Models that identify specific fraud techniques
 - **Use Case**: Detailed fraud analysis and forensic investigation
 - **Target**: `fraud_type` column (6 fraud types + real)
 
 ### Cross-Country Models
-- **Country-Specific Models**: Trained on specific countries (GRC, RUS, WV)
+- **Country-Specific Models**: Trained on specific countries (GRC, RUS, WV, LVA, SVK, AZ)
 - **Generalization Models**: Trained on multiple countries for cross-country performance
 - **Use Case**: Understanding cultural and document format differences
 
@@ -24,9 +52,14 @@ This directory stores all trained models for the Identity Document Fraud Detecti
 Use descriptive names with versions and dates:
 - `{model_type}_{dataset}_{task}_{version}_{date}.{ext}`
 - Examples:
-  - `cnn_idnet_binary_v1_20241004.h5`
-  - `resnet_grc_multiclass_v2_20241004.pth`
-  - `efficientnet_crosscountry_binary_v1_20241004.onnx`
+  - `resnet18_document_type_v1_20241120.pth`
+  - `vit_document_type_baseline_20241120.pth`
+  - `efficientnet_crosscountry_binary_v1_20241120.pth`
+  
+For checkpoints:
+- `resnet18_document_type_epoch_10_val_acc_0.92.pth`
+- `vit_baseline_best.pth`
+- `resnet18_latest.pth`
 
 ## File Formats
 

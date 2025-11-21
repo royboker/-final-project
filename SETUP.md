@@ -25,36 +25,105 @@ venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 ```
 
-4. **Ensure datasets are available:**
-   - Make sure the following directories exist with image files:
+4. **Setup Jupyter Kernel (optional):**
+```bash
+python -m ipykernel install --user --name=final-project --display-name "Python (Final Project)"
+```
+
+5. **Ensure datasets are available:**
+   - Download the IDNet dataset from Kaggle
+   - Extract to `datasets/idnet/` directory
+   - Expected directories:
+     - `datasets/idnet/ALB/` - Albanian passport images
      - `datasets/idnet/GRC/` - Greek passport images
      - `datasets/idnet/RUS/` - Russian ID card images  
-     - `datasets/idnet/WV/` - West Virginia driver license images
+     - `datasets/idnet/WV/` - West Virginia driver's licenses
+     - `datasets/idnet/NV/` - Nevada ID card images
+     - `datasets/idnet/LVA/` - Latvian passports
+     - `datasets/idnet/SVK/` - Slovakian ID cards
+     - `datasets/idnet/AZ/` - Arizona driver's licenses
+
+6. **Prepare datasets (if needed):**
+```bash
+# Create unified datasets
+python src/data/create_unified_grc_dataset.py
+python src/data/create_unified_rus_dataset.py
+python src/data/create_unified_wv_dataset.py
+
+# Create document type classification dataset
+python src/data/create_document_type_dataset.py
+```
 
 ## Project Structure
 ```
 final-project/
 ├── src/                    # Source code
-├── notebooks/              # Jupyter notebooks
-├── datasets/               # Dataset files (local)
-│   └── idnet/
-│       ├── GRC/            # Greek passports
-│       ├── RUS/            # Russian ID cards
-│       ├── WV/             # West Virginia driver licenses
-│       └── document_type_classification/
-├── models/                 # Model files
-├── results/                # Results and outputs
-└── requirements.txt        # Python dependencies
+│   ├── data/              # Data processing scripts
+│   ├── models/            # Model architectures (cnn_models.py)
+│   ├── training/          # Training scripts
+│   └── utils/             # Utility functions
+│
+├── notebooks/             # Jupyter notebooks
+│   └── document_type_classification/
+│       ├── dataset_overview.ipynb
+│       ├── template.ipynb
+│       ├── resnet18/      # ResNet18 experiments
+│       └── vit/           # Vision Transformer experiments
+│
+├── datasets/              # Dataset files (local)
+│   ├── idnet/
+│   │   ├── ALB/           # Albanian passports
+│   │   ├── GRC/           # Greek passports
+│   │   ├── RUS/           # Russian ID cards
+│   │   ├── WV/            # West Virginia driver's licenses
+│   │   ├── NV/            # Nevada ID cards
+│   │   ├── LVA/           # Latvian passports
+│   │   ├── SVK/           # Slovakian ID cards
+│   │   ├── AZ/            # Arizona driver's licenses
+│   │   └── document_type_classification_country_split/
+│   └── examples/          # Sample data
+│
+├── models/                # Trained models
+│   └── checkpoints/       # Training checkpoints
+│
+├── results/               # Results and outputs
+│   ├── figures/           # Visualizations
+│   └── logs/              # Training logs
+│
+└── requirements.txt       # Python dependencies
 ```
 
 ## Usage
-1. **Start Jupyter:** `jupyter lab`
-2. **Open notebooks** in `notebooks/` directory
-3. **Run data exploration** and preprocessing notebooks
-4. **Train models** using the provided scripts
+1. **Start Jupyter Lab:** 
+```bash
+jupyter lab
+```
+
+2. **Explore the Data:**
+   - Open `notebooks/document_type_classification/dataset_overview.ipynb`
+   - View dataset statistics and visualizations
+
+3. **Train Models:**
+   - Use notebooks in `notebooks/document_type_classification/resnet18/` for ResNet18 models
+   - Use notebooks in `notebooks/document_type_classification/vit/` for Vision Transformer models
+   - Or create new experiments using `template.ipynb`
+
+4. **Check Results:**
+   - Models saved to `models/checkpoints/`
+   - Visualizations saved to `results/figures/`
+   - Training logs saved to `results/logs/`
 
 ## Dataset Information
-- **Total images:** ~130,000 identity documents
-- **Document types:** Passports, ID Cards, Driver Licenses
+- **Total images:** ~260,000+ identity documents (and expanding)
+- **Countries:** 8+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Arizona, West Virginia)
+- **Document types:** Passports, ID Cards, Driver's Licenses
 - **Image formats:** PNG, JPG
-- **Local storage:** All images stored locally in `datasets/` directory
+- **Storage size:** ~110GB+
+- **Local storage:** All images stored locally in `datasets/idnet/` directory
+
+## Current Focus
+The project is currently focused on **Document Type Classification**:
+- **Task:** Classify documents into 3 types (Passport, ID Card, Driver's License)
+- **Dataset:** `datasets/idnet/document_type_classification_country_split/`
+- **Models:** ResNet18, Vision Transformer (ViT), EfficientNet
+- **Notebooks:** `notebooks/document_type_classification/`

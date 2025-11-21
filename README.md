@@ -8,8 +8,8 @@ This project focuses on **Identity Document Fraud Detection** using machine lear
 
 ### IDNet Dataset
 - **Source**: [Kaggle - IDNet Identity Document Analysis](https://www.kaggle.com/datasets/chitreshkr/idnet-identity-document-analysis)
-- **Size**: ~49GB (125,556 images total)
-- **Countries**: 3 (Greece, Russia, USA)
+- **Size**: ~110GB+ (260,000+ images and expanding)
+- **Countries**: 8+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Arizona, West Virginia)
 - **Document Types**: Passports, ID Cards, Driver's Licenses
 - **Fraud Types**: 6 different fraud techniques
 - **Location**: `datasets/idnet/`
@@ -27,29 +27,48 @@ final-project/
 │
 ├── datasets/              # All datasets and processed data
 │   ├── idnet/            # IDNet dataset (raw + processed)
+│   │   ├── ALB/          # Albanian passports
 │   │   ├── GRC/          # Greek passports
 │   │   ├── RUS/          # Russian ID cards  
-│   │   ├── WV/           # American driver's licenses
+│   │   ├── WV/           # West Virginia driver's licenses
+│   │   ├── NV/           # Nevada ID cards
+│   │   ├── LVA/          # Latvian passports
+│   │   ├── SVK/          # Slovakian ID cards
+│   │   ├── AZ/           # Arizona driver's licenses
+│   │   ├── document_type_classification_country_split/  # Document type dataset
 │   │   └── README.md     # IDNet dataset documentation
 │   ├── examples/         # Sample data for demonstration
 │   │   └── README.md     # Examples documentation
 │   └── README.md         # General dataset documentation
 │
-├── notebooks/            # Jupyter notebooks for exploration
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_data_exploration_WV.ipynb
-│   └── 03_data_exploration_RUS.ipynb
+├── notebooks/            # Jupyter notebooks for experiments
+│   └── document_type_classification/  # Document type classification experiments
+│       ├── dataset_overview.ipynb     # Dataset analysis and visualization
+│       ├── template.ipynb             # Template for new experiments
+│       ├── resnet18/                  # ResNet18 experiments
+│       │   ├── resnet18_baseline_500.ipynb
+│       │   ├── resnet18_baseline_1000.ipynb
+│       │   ├── resnet18_baseline_2000.ipynb
+│       │   └── resnet18_baseline_3600.ipynb
+│       └── vit/                       # Vision Transformer experiments
+│           └── vit_baseline_500.ipynb
 │
 ├── src/                  # Source code
 │   ├── data/            # Data processing and loading scripts
-│   │   ├── create_unified_*.py  # Dataset creation scripts
-│   │   ├── explore_idnet.py     # Data exploration
-│   │   └── fix_fraud5_data.py   # Data quality fixes
+│   │   ├── create_unified_*.py           # Country-specific dataset creation
+│   │   ├── create_document_type_dataset.py  # Document type dataset
+│   │   ├── prepare_idnet_full_dataset.py    # Full IDNet dataset preparation
+│   │   ├── fix_dataset_splits.py         # Fix train/val/test splits
+│   │   ├── split_dataset.py              # Dataset splitting utilities
+│   │   ├── load_idnet_dataset.py         # Dataset loading utilities
+│   │   └── explore_idnet.py              # Data exploration tools
 │   ├── models/          # Model architectures
+│   │   └── cnn_models.py                 # CNN models (ResNet, EfficientNet, etc.)
 │   ├── training/        # Training scripts
 │   └── utils/           # Utility functions
 │
 ├── models/              # Trained models
+│   ├── checkpoints/     # Model checkpoints during training
 │   └── README.md        # Model documentation
 │
 ├── results/             # Experiment results
@@ -92,10 +111,11 @@ python -m ipykernel install --user --name=final-project --display-name "Python (
 ## 🚀 Getting Started
 
 ### Quick Start
-1. **Explore the Data**: Start with `notebooks/01_data_exploration.ipynb`
+1. **Explore the Data**: Start with `notebooks/document_type_classification/dataset_overview.ipynb`
 2. **Check Examples**: Look at `datasets/examples/` for sample data
 3. **Load Processed Data**: Use the unified CSV files in `datasets/idnet/`
-4. **Build Models**: Create fraud detection models using the processed data
+4. **Train Models**: Use the notebooks in `notebooks/document_type_classification/` for model training
+5. **Build Custom Models**: Create fraud detection models using the processed data
 
 ### Data Loading Example
 ```python
@@ -124,11 +144,16 @@ print(f"WV: {wv_df.shape[0]} images, {wv_df['is_real'].sum()} real")
 
 ## 📈 Project Goals
 
+### Phase 1: Document Type Classification (Current Focus)
+1. **Multi-Class Classification**: Classify documents into types (Passport, ID Card, Driver's License)
+2. **Cross-Country Analysis**: Train on multiple countries, test generalization
+3. **Model Comparison**: Compare different architectures (ResNet, ViT, EfficientNet)
+
+### Phase 2: Fraud Detection (Future)
 1. **Binary Classification**: Real vs Fake documents
 2. **Multi-Class Classification**: Identify specific fraud types
 3. **Cross-Country Generalization**: Model performance across different countries
-4. **Document Type Analysis**: Performance on different document types
-5. **Fraud Type Detection**: Identify specific fraud techniques
+4. **Fraud Type Detection**: Identify specific fraud techniques
 
 ## 🔬 Research Questions
 

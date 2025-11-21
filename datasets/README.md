@@ -7,9 +7,18 @@ This directory contains all datasets used in the Identity Document Fraud Detecti
 ```
 datasets/
 ├── idnet/                    # IDNet dataset (main dataset)
+│   ├── ALB/                 # Albanian passports
 │   ├── GRC/                 # Greek passports
 │   ├── RUS/                 # Russian ID cards
-│   ├── WV/                  # American driver's licenses
+│   ├── WV/                  # West Virginia driver's licenses
+│   ├── NV/                  # Nevada ID cards
+│   ├── LVA/                 # Latvian passports
+│   ├── SVK/                 # Slovakian ID cards
+│   ├── AZ/                  # Arizona driver's licenses
+│   ├── document_type_classification_country_split/  # Document type dataset
+│   │   ├── data/
+│   │   │   └── dataset.csv  # Combined dataset for document type classification
+│   │   └── images/          # Symlinked images from all countries
 │   ├── GRC_Unified_Dataset.csv
 │   ├── RUS_Unified_Dataset.csv
 │   ├── WV_Unified_Dataset.csv
@@ -28,8 +37,8 @@ datasets/
 
 ### Overview
 - **Source**: [Kaggle - IDNet Identity Document Analysis](https://www.kaggle.com/datasets/chitreshkr/idnet-identity-document-analysis)
-- **Size**: ~49GB (125,556 images total)
-- **Countries**: 3 (Greece, Russia, USA)
+- **Size**: ~110GB+ (260,000+ images and expanding)
+- **Countries**: 8+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Arizona, West Virginia)
 - **Document Types**: Passports, ID Cards, Driver's Licenses
 - **Fraud Types**: 6 different techniques
 
@@ -40,19 +49,33 @@ datasets/
 - **Unified Format**: Processed into CSV files for easy model training
 
 ### Processed Data
+
+#### Country-Specific Datasets
 The raw dataset has been processed into unified CSV files:
 - `GRC_Unified_Dataset.csv` - Greek passports (41,852 images)
 - `RUS_Unified_Dataset.csv` - Russian ID cards (41,852 images)
-- `WV_Unified_Dataset.csv` - American driver's licenses (41,852 images)
+- `WV_Unified_Dataset.csv` - West Virginia driver's licenses (41,852 images)
+
+#### Document Type Classification Dataset
+- `document_type_classification_country_split/` - Mixed dataset for document type classification
+  - Combines real images from all countries
+  - Balanced across document types (Passport, ID Card, Driver's License)
+  - Split into train/val/test sets without data leakage
+  - Used for multi-class document type classification models
 
 ## 📋 Dataset Statistics
 
 | Country | Document Type | Total Images | Real Images | Fake Images | Size |
 |---------|---------------|--------------|-------------|-------------|------|
+| 🇦🇱 Albania | Passports | 29,895 | 5,979 (20%) | 23,916 (80%) | 17GB |
 | 🇬🇷 Greece | Passports | 41,852 | 4,592 (11%) | 37,260 (89%) | 8.9GB |
 | 🇷🇺 Russia | ID Cards | 41,852 | 5,979 (14%) | 35,873 (86%) | 8.4GB |
-| 🇺🇸 USA | Driver's Licenses | 41,852 | 1,298 (3%) | 40,554 (97%) | 31.5GB |
-| **Total** | **Mixed** | **125,556** | **11,869 (9%)** | **113,687 (91%)** | **49GB** |
+| 🇺🇸 West Virginia | Driver's Licenses | 41,852 | 1,298 (3%) | 40,554 (97%) | 31.5GB |
+| 🇺🇸 Nevada | ID Cards | 29,895 | 5,979 (20%) | 23,916 (80%) | 9.9GB |
+| 🇱🇻 Latvia | Passports | ~30,000 | 5,979 | ~24,000 | ~16GB |
+| 🇸🇰 Slovakia | ID Cards | ~30,000 | 5,979 | ~24,000 | ~4GB |
+| 🇺🇸 Arizona | Driver's Licenses | ~30,000 | 5,979 | ~24,000 | ~12GB |
+| **Total** | **Mixed** | **260,000+** | **41,000+ (16%)** | **219,000+ (84%)** | **110GB+** |
 
 ## 🕵️ Fraud Types
 
@@ -90,9 +113,7 @@ Check the `examples/` directory for sample data that demonstrates:
 
 ### 3. Data Exploration
 Use the provided notebooks:
-- `notebooks/01_data_exploration.ipynb` - General exploration
-- `notebooks/02_data_exploration_WV.ipynb` - WV-specific analysis
-- `notebooks/03_data_exploration_RUS.ipynb` - RUS-specific analysis
+- `notebooks/document_type_classification/dataset_overview.ipynb` - Dataset analysis and visualization
 
 ## 📊 Data Quality
 
@@ -112,8 +133,11 @@ Use the provided notebooks:
 ## 🔧 Data Processing
 
 ### Available Scripts
-- `src/data/create_unified_*.py` - Create unified datasets
-- `src/data/fix_fraud5_data.py` - Fix data quality issues
+- `src/data/create_unified_*.py` - Create country-specific unified datasets
+- `src/data/create_document_type_dataset.py` - Create document type classification dataset
+- `src/data/prepare_idnet_full_dataset.py` - Prepare full IDNet dataset with multiple countries
+- `src/data/fix_dataset_splits.py` - Fix train/val/test splits
+- `src/data/split_dataset.py` - Dataset splitting utilities
 - `src/data/explore_idnet.py` - Data exploration utilities
 
 ### Processing Pipeline
@@ -125,21 +149,27 @@ Use the provided notebooks:
 
 ## 📈 Use Cases
 
-### 1. Binary Classification
+### 1. Document Type Classification (Current Focus)
+- **Task**: Classify document type (Passport, ID Card, Driver's License)
+- **Input**: Document images from multiple countries
+- **Output**: Multi-class classification (3 document types)
+- **Dataset**: `document_type_classification_country_split/`
+
+### 2. Binary Classification (Future)
 - **Task**: Real vs Fake document detection
 - **Input**: Document images
 - **Output**: Binary classification (real/fake)
 
-### 2. Multi-Class Classification
+### 3. Fraud Type Classification (Future)
 - **Task**: Fraud type identification
 - **Input**: Document images
-- **Output**: Fraud type classification
+- **Output**: Multi-class fraud type classification
 
-### 3. Cross-Country Analysis
+### 4. Cross-Country Analysis
 - **Task**: Model generalization across countries
-- **Approach**: Train on one country, test on others
+- **Approach**: Train on multiple countries, test on unseen countries
 
-### 4. Document Type Analysis
+### 5. Document Type Analysis
 - **Task**: Performance across document types
 - **Approach**: Compare model performance on different document types
 
