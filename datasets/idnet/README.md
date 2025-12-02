@@ -5,12 +5,12 @@
 The IDNet dataset is a comprehensive collection of identity documents from multiple countries, designed for fraud detection research. It contains both authentic and forged documents with detailed metadata and fraud annotations.
 
 ### 🎯 Key Statistics
-- **Total Images**: 185,000+ (expanding)
-- **Countries**: 8+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Arizona, West Virginia)
+- **Total Images**: 215,000+ (expanding)
+- **Countries**: 9+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Washington DC, Arizona, West Virginia)
 - **Document Types**: Passports, ID Cards, Driver's Licenses
 - **Fraud Types**: 6 different techniques
 - **Real vs Fake**: Balanced dataset (~50% each)
-- **Total Size**: ~110GB+ (raw data, expanding)
+- **Total Size**: ~130GB+ (raw data, expanding)
 
 ## 🌍 Countries & Document Types
 
@@ -21,6 +21,7 @@ The IDNet dataset is a comprehensive collection of identity documents from multi
 | 🇱🇻 Latvia | LVA | Passports | 5,979 | ~16GB |
 | 🇷🇺 Russia | RUS | ID Cards | 41,852 | 8.4GB |
 | 🇺🇸 USA (West Virginia) | WV | Driver's Licenses | 41,852 | 31.5GB |
+| 🇺🇸 USA (Washington DC) | DC | Driver's Licenses | 29,895 | 18GB |
 | 🇺🇸 USA (Nevada) | NV | ID Cards | 29,895 | 9.9GB |
 | 🇺🇸 USA (Arizona) | AZ | Driver's Licenses | 5,979 | ~12GB |
 | 🇸🇰 Slovakia | SVK | ID Cards | 5,979 | ~4.0GB |
@@ -127,6 +128,16 @@ idnet/
 │
 ├── NV/                           # Nevada ID Cards
 │   ├── positive/                 # Real ID cards (5,979 images)
+│   ├── fraud1_copy_and_move/     # Copy & move fraud (5,979 images)
+│   ├── fraud2_face_morphing/     # Face morphing fraud (5,979 images)
+│   ├── fraud3_face_replacement/  # Face replacement fraud (5,979 images)
+│   ├── fraud4_combined/          # Combined fraud (5,979 images)
+│   └── meta/                     # Metadata JSON files
+│       ├── basic/                # Personal information (5,979 files)
+│       └── detailed_with_fraud_info/ # Fraud annotations
+│
+├── DC/                           # Washington DC Driver's Licenses
+│   ├── positive/                 # Real licenses (5,979 images)
 │   ├── fraud1_copy_and_move/     # Copy & move fraud (5,979 images)
 │   ├── fraud2_face_morphing/     # Face morphing fraud (5,979 images)
 │   ├── fraud3_face_replacement/  # Face replacement fraud (5,979 images)
@@ -253,6 +264,18 @@ Each CSV file contains the following columns:
   - face_replacement: 5,979 (25.0%)
   - combined: 5,979 (25.0%)
 - **Document Type**: ID Cards
+- **Note**: Contains 4 fraud types (fraud1-4)
+
+#### DC (Washington DC Driver's Licenses)
+- **Total Images**: 29,895
+- **Real Images**: 5,979 (20.0%)
+- **Fake Images**: 23,916 (80.0%)
+- **Fraud Distribution**:
+  - copy_and_move: 5,979 (25.0%)
+  - face_morphing: 5,979 (25.0%)
+  - face_replacement: 5,979 (25.0%)
+  - combined: 5,979 (25.0%)
+- **Document Type**: Driver's Licenses
 - **Note**: Contains 4 fraud types (fraud1-4)
 
 ## 🔧 Data Processing Scripts

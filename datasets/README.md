@@ -11,6 +11,7 @@ datasets/
 │   ├── GRC/                 # Greek passports
 │   ├── RUS/                 # Russian ID cards
 │   ├── WV/                  # West Virginia driver's licenses
+│   ├── DC/                  # Washington DC driver's licenses
 │   ├── NV/                  # Nevada ID cards
 │   ├── LVA/                 # Latvian passports
 │   ├── SVK/                 # Slovakian ID cards
@@ -37,8 +38,8 @@ datasets/
 
 ### Overview
 - **Source**: [Kaggle - IDNet Identity Document Analysis](https://www.kaggle.com/datasets/chitreshkr/idnet-identity-document-analysis)
-- **Size**: ~110GB+ (260,000+ images and expanding)
-- **Countries**: 8+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Arizona, West Virginia)
+- **Size**: ~130GB+ (290,000+ images and expanding)
+- **Countries**: 9+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Washington DC, Arizona, West Virginia)
 - **Document Types**: Passports, ID Cards, Driver's Licenses
 - **Fraud Types**: 6 different techniques
 
@@ -71,11 +72,12 @@ The raw dataset has been processed into unified CSV files:
 | 🇬🇷 Greece | Passports | 41,852 | 4,592 (11%) | 37,260 (89%) | 8.9GB |
 | 🇷🇺 Russia | ID Cards | 41,852 | 5,979 (14%) | 35,873 (86%) | 8.4GB |
 | 🇺🇸 West Virginia | Driver's Licenses | 41,852 | 1,298 (3%) | 40,554 (97%) | 31.5GB |
+| 🇺🇸 Washington DC | Driver's Licenses | 29,895 | 5,979 (20%) | 23,916 (80%) | 18GB |
 | 🇺🇸 Nevada | ID Cards | 29,895 | 5,979 (20%) | 23,916 (80%) | 9.9GB |
 | 🇱🇻 Latvia | Passports | ~30,000 | 5,979 | ~24,000 | ~16GB |
 | 🇸🇰 Slovakia | ID Cards | ~30,000 | 5,979 | ~24,000 | ~4GB |
 | 🇺🇸 Arizona | Driver's Licenses | ~30,000 | 5,979 | ~24,000 | ~12GB |
-| **Total** | **Mixed** | **260,000+** | **41,000+ (16%)** | **219,000+ (84%)** | **110GB+** |
+| **Total** | **Mixed** | **290,000+** | **47,000+ (16%)** | **243,000+ (84%)** | **130GB+** |
 
 ## 🕵️ Fraud Types
 

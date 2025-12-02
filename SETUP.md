@@ -38,6 +38,7 @@ python -m ipykernel install --user --name=final-project --display-name "Python (
      - `datasets/idnet/GRC/` - Greek passport images
      - `datasets/idnet/RUS/` - Russian ID card images  
      - `datasets/idnet/WV/` - West Virginia driver's licenses
+     - `datasets/idnet/DC/` - Washington DC driver's license images
      - `datasets/idnet/NV/` - Nevada ID card images
      - `datasets/idnet/LVA/` - Latvian passports
      - `datasets/idnet/SVK/` - Slovakian ID cards
@@ -76,6 +77,7 @@ final-project/
 │   │   ├── GRC/           # Greek passports
 │   │   ├── RUS/           # Russian ID cards
 │   │   ├── WV/            # West Virginia driver's licenses
+│   │   ├── DC/            # Washington DC driver's licenses
 │   │   ├── NV/            # Nevada ID cards
 │   │   ├── LVA/           # Latvian passports
 │   │   ├── SVK/           # Slovakian ID cards
@@ -114,11 +116,11 @@ jupyter lab
    - Training logs saved to `results/logs/`
 
 ## Dataset Information
-- **Total images:** ~260,000+ identity documents (and expanding)
-- **Countries:** 8+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Arizona, West Virginia)
+- **Total images:** ~290,000+ identity documents (and expanding)
+- **Countries:** 9+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Washington DC, Arizona, West Virginia)
 - **Document types:** Passports, ID Cards, Driver's Licenses
 - **Image formats:** PNG, JPG
-- **Storage size:** ~110GB+
+- **Storage size:** ~130GB+
 - **Local storage:** All images stored locally in `datasets/idnet/` directory
 
 ## Current Focus

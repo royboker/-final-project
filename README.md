@@ -8,8 +8,8 @@ This project focuses on **Identity Document Fraud Detection** using machine lear
 
 ### IDNet Dataset
 - **Source**: [Kaggle - IDNet Identity Document Analysis](https://www.kaggle.com/datasets/chitreshkr/idnet-identity-document-analysis)
-- **Size**: ~110GB+ (260,000+ images and expanding)
-- **Countries**: 8+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Arizona, West Virginia)
+- **Size**: ~130GB+ (290,000+ images and expanding)
+- **Countries**: 9+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Washington DC, Arizona, West Virginia)
 - **Document Types**: Passports, ID Cards, Driver's Licenses
 - **Fraud Types**: 6 different fraud techniques
 - **Location**: `datasets/idnet/`
@@ -31,6 +31,7 @@ final-project/
 │   │   ├── GRC/          # Greek passports
 │   │   ├── RUS/          # Russian ID cards  
 │   │   ├── WV/           # West Virginia driver's licenses
+│   │   ├── DC/           # Washington DC driver's licenses
 │   │   ├── NV/           # Nevada ID cards
 │   │   ├── LVA/          # Latvian passports
 │   │   ├── SVK/          # Slovakian ID cards
