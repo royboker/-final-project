@@ -19,7 +19,7 @@
 | Dropout | 0.2 |
 | Max Epochs | 15 |
 | Optimizer | AdamW |
-| Pre-trained | No (from scratch) |
+| Pre-trained | Yes |
 | Early Stopping | Yes (patience: 5) |
 | LR Scheduler | ReduceLROnPlateau (factor=0.5, patience=4, min_lr=1e-6) |
 | Gradient Clipping | Yes (max_norm=1.0) |
