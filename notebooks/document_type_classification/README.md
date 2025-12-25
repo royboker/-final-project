@@ -1,240 +1,240 @@
-# 📓 Document Type Classification - Notebooks
+# 📓 Document Type Classification Notebooks
 
-This directory contains all Jupyter notebooks for the **Document Type Classification** project.
+This directory contains Jupyter notebooks for document type classification experiments and analysis.
 
-## 📋 Notebooks Overview
+## 🎯 Task Overview
 
-### Completed Notebooks ✅
+**Goal**: Classify identity documents into 3 types:
+- 🛂 **Passports** (e.g., Greece, Latvia)
+- 🪪 **ID Cards** (e.g., Russia, Slovakia)
+- 🚗 **Driver's Licenses** (e.g., West Virginia, Arizona)
 
-1. **01_data_exploration_and_visualization.ipynb** ✅
-   - Load and explore the dataset
-   - Visualize sample images from each class
-   - Analyze class distribution
-   - Check image dimensions and properties
-   - Verify data quality
+## 📁 Directory Structure
 
-2. **02_data_preprocessing_and_augmentation.ipynb** ✅
-   - Load train/validation/test datasets
-   - Define preprocessing pipeline with normalization (ImageNet stats)
-   - Implement data augmentations (Rotation, ColorJitter, Affine, Sharpness)
-   - Create custom Dataset class with error handling
-   - Configure DataLoaders (notebook-optimized)
-   - Visualize augmented samples
-   - Compute dataset statistics
-   - Save configuration files for training
-   - **Features:**
-     - ImageNet normalization for pretrained model compatibility
-     - Multiple augmentation techniques (no horizontal flip - not suitable for documents)
-     - Robust error handling (3 retries for corrupted images)
-     - Comprehensive statistics for research documentation
-     - Configuration saved to JSON files
-
-### Planned Notebooks 📝
-
-3. **03_model_training.ipynb** (To be created)
-   - Load preprocessing configuration
-   - Build models (Baseline CNN, ResNet18/50, EfficientNet-B0)
-   - Train models on training set
-   - Monitor training with validation metrics
-   - Save model checkpoints
-   - Compare model performance
-
-4. **04_model_evaluation.ipynb** (To be created)
-   - Load best model
-   - Evaluate on test set
-   - Generate confusion matrix
-   - Analyze errors
-   - Visualize predictions
-   - Performance metrics across classes
-
-## 🎯 Goals
-
-- **Primary**: Achieve >90% accuracy on test set
-- **Secondary**: Balanced performance across all 3 classes
-- **Tertiary**: Model generalizes to unseen countries
-
-## 📊 Dataset Location
-
-All notebooks load data from:
-```python
-DATA_DIR = '../../datasets/idnet/document_type_classification/data/'
-TRAIN_CSV = DATA_DIR + 'train_dataset.csv'
-VAL_CSV = DATA_DIR + 'val_dataset.csv'
-TEST_CSV = DATA_DIR + 'test_dataset.csv'
+```
+document_type_classification/
+├── README.md                    # This file
+├── dataset_overview.ipynb       # Dataset analysis and visualization
+├── template.ipynb               # Template for new experiments
+│
+├── resnet18/                    # ResNet18 experiments
+│   ├── resnet18_baseline_500.ipynb    # 500 samples per class
+│   ├── resnet18_baseline_1000.ipynb   # 1000 samples per class
+│   ├── resnet18_baseline_2000.ipynb   # 2000 samples per class
+│   ├── resnet18_baseline_3600.ipynb   # 3600 samples per class
+│   ├── train.csv              # Training set
+│   ├── val.csv                # Validation set
+│   ├── test.csv               # Test set
+│   └── images/                # Plots and visualizations
+│
+└── vit/                         # Vision Transformer experiments
+    ├── vit_baseline_500.ipynb   # 500 samples per class
+    ├── train.csv              # Training set
+    ├── val.csv                # Validation set
+    ├── test.csv               # Test set
+    └── images/                # Plots and visualizations
 ```
 
-**Dataset Statistics:**
-- **Train**: 1,470 samples (490 per class - balanced)
-- **Validation**: 315 samples (105 per class - balanced)
-- **Test**: 315 samples (105 per class - balanced)
-- **Total**: 2,100 images
-- **Classes**: 3 (driver_license, id_card, passport)
+## 📊 Notebooks Description
 
-## 🚀 Quick Start
+### 1. dataset_overview.ipynb
+**Purpose**: Comprehensive dataset analysis and visualization
+- Dataset statistics (class distribution, image counts)
+- Sample image visualization from each document type
+- Image dimension analysis
+- Data quality checks
+- Dataset imbalance analysis
 
-```bash
-# Activate virtual environment
-source venv/bin/activate
-
-# Start Jupyter
-jupyter notebook
-
-# Navigate to this directory and open a notebook
-```
-
-## 📝 Notebook Template Structure
-
-Each notebook should follow this structure:
-
-1. **Setup**
-   - Imports
-   - Configuration
-   - Set random seeds
-
-2. **Data Loading**
-   - Load CSV files
-   - Verify data integrity
-   - Display samples
-
-3. **Preprocessing**
-   - Image loading
-   - Resizing
-   - Normalization
-   - Augmentation (if applicable)
-
-4. **Model Building**
-   - Define architecture
-   - Compile model
-   - Display summary
-
-5. **Training**
-   - Train model
-   - Monitor metrics
-   - Save checkpoints
-
-6. **Evaluation**
-   - Evaluate on validation/test set
-   - Generate metrics
-   - Visualize results
-
-7. **Analysis**
-   - Error analysis
-   - Confusion matrix
-   - Sample predictions
-
-## 🔧 Common Imports (PyTorch)
-
-```python
-# Data handling
-import pandas as pd
-import numpy as np
-from pathlib import Path
-import json
-import time
-
-# Image processing
-from PIL import Image
-from torchvision import transforms
-from torch.utils.data import Dataset, DataLoader
-
-# Visualization
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# Deep Learning - PyTorch
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from torchvision import models
-
-# Models (from src)
-import sys
-sys.path.append('../../src')
-from models.cnn_models import create_model, get_model_info
-
-# Metrics
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-```
-
-## 📈 Expected Results
-
-| Model | Parameters | Accuracy (Expected) | Training Time |
-|-------|------------|---------------------|---------------|
-| Baseline CNN | ~51.6M | 80-85% | 1-2 hours |
-| ResNet18 | ~11.3M | 90-93% | 2-3 hours |
-| EfficientNet-B0 | ~4.3M | 92-95% | 2-4 hours |
-| ResNet50 | ~24M | 93-96% | 3-5 hours |
-
-## 🎯 Classes
-
-- **0**: driver_license (רישיון נהיגה)
-- **1**: id_card (תעודת זהות)
-- **2**: passport (דרכון)
-
-**Class Mapping** (saved in `models/class_mapping.json`):
-```json
-{
-  "driver_license": 0,
-  "id_card": 1,
-  "passport": 2
-}
-```
-
-## ⚙️ Preprocessing Configuration
-
-The preprocessing pipeline is configured in `02_data_preprocessing_and_augmentation.ipynb` and saved to:
-- **Configuration**: `models/preprocessing_config.json`
-- **Class Mapping**: `models/class_mapping.json`
-
-**Key Settings:**
-- **Image Size**: 224×224 pixels
-- **Normalization**: ImageNet standard (mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-- **Augmentations**: 
-  - RandomRotation (10°)
-  - ColorJitter (brightness, contrast, saturation, hue)
-  - RandomAffine (translation)
-  - RandomAdjustSharpness
-  - ⚠️ **No HorizontalFlip** (not suitable for documents with text)
-- **Batch Size**: 32
-- **Error Handling**: 3 retries for corrupted images
-
-## 📚 Resources
-
-- **Dataset README**: `../../datasets/idnet/document_type_classification/README.md`
-- **Main Project README**: `../../README.md`
-- **Model Documentation**: `../../src/models/cnn_models.py`
-- **Preprocessing Config**: `../../models/preprocessing_config.json`
-- **Class Mapping**: `../../models/class_mapping.json`
-
-## 📦 Available Models
-
-All models are defined in `src/models/cnn_models.py`:
-
-```python
-from models.cnn_models import create_model
-
-# Create any model
-model = create_model('baseline', num_classes=3, pretrained=False)
-model = create_model('resnet18', num_classes=3, pretrained=True)
-model = create_model('resnet50', num_classes=3, pretrained=True)
-model = create_model('efficientnet', num_classes=3, pretrained=True)
-```
-
-All models are compatible with the preprocessing pipeline (224×224, ImageNet normalization).
-
-## 🚨 Important Notes
-
-1. **Notebook vs Script**: DataLoaders use `num_workers=0` for notebooks (multiprocessing limitations). In training scripts, you can use `num_workers=2-4`.
-
-2. **MPS/CUDA**: `pin_memory` is automatically disabled for MPS devices (Mac) and only enabled for CUDA.
-
-3. **Augmentation**: Horizontal flip is intentionally excluded as it reverses text, which is not suitable for document classification.
-
-4. **Dataset Balance**: The dataset is perfectly balanced (33.3% per class in all splits).
+**Use this to**: Understand the dataset before training models
 
 ---
 
-**Status**: ✅ Data exploration and preprocessing completed  
-**Next Step**: Create `03_model_training.ipynb` for model training
+### 2. template.ipynb
+**Purpose**: Template for creating new experiments
+- Standard structure for new experiments
+- Best practices and code organization
+- Data loading utilities
+- Training loop structure
+- Evaluation metrics
+
+**Use this to**: Start a new experiment with consistent structure
+
+---
+
+### 3. ResNet18 Experiments (`resnet18/`)
+
+#### resnet18_baseline_500.ipynb
+- **Dataset Size**: 500 samples per class (1,500 total)
+- **Architecture**: ResNet18 with transfer learning
+- **Purpose**: Quick baseline with small dataset
+
+#### resnet18_baseline_1000.ipynb
+- **Dataset Size**: 1,000 samples per class (3,000 total)
+- **Architecture**: ResNet18 with transfer learning
+- **Purpose**: Baseline with medium dataset
+
+#### resnet18_baseline_2000.ipynb
+- **Dataset Size**: 2,000 samples per class (6,000 total)
+- **Architecture**: ResNet18 with transfer learning
+- **Purpose**: Baseline with larger dataset
+
+#### resnet18_baseline_3600.ipynb
+- **Dataset Size**: 3,600 samples per class (10,800 total)
+- **Architecture**: ResNet18 with transfer learning
+- **Purpose**: Full dataset baseline (maximum available samples)
+
+**Key Features**:
+- Transfer learning from ImageNet
+- Data augmentation (rotation, flip, color jitter)
+- Learning rate scheduling
+- Early stopping
+- Model checkpointing
+
+---
+
+### 4. Vision Transformer Experiments (`vit/`)
+
+#### vit_baseline_500.ipynb
+- **Dataset Size**: 500 samples per class (1,500 total)
+- **Architecture**: Vision Transformer (ViT)
+- **Purpose**: Baseline with transformer architecture
+
+**Key Features**:
+- Transformer-based architecture
+- Patch-based image processing
+- Self-attention mechanisms
+- Comparison with CNN approaches
+
+---
+
+## 🚀 Getting Started
+
+### 1. Start with Dataset Overview
+```bash
+jupyter lab dataset_overview.ipynb
+```
+- Understand the dataset
+- View sample images
+- Check class distribution
+
+### 2. Run a Baseline Experiment
+```bash
+# Start with small dataset for quick iteration
+jupyter lab resnet18/resnet18_baseline_500.ipynb
+```
+
+### 3. Scale Up
+- Try larger datasets as needed
+- Compare different architectures
+- Tune hyperparameters
+
+### 4. Create New Experiments
+```bash
+# Use template for new experiments
+jupyter lab template.ipynb
+```
+
+## 📈 Typical Training Results
+
+### ResNet18 Baselines
+- **500 samples/class**: ~85-90% validation accuracy
+- **1000 samples/class**: ~90-93% validation accuracy
+- **2000 samples/class**: ~92-95% validation accuracy
+- **3600 samples/class**: ~93-96% validation accuracy
+
+### Training Time (Apple M1/M2)
+- **500 samples**: ~5-10 minutes
+- **1000 samples**: ~10-15 minutes
+- **2000 samples**: ~15-25 minutes
+- **3600 samples**: ~25-40 minutes
+
+## 🔧 Common Hyperparameters
+
+### ResNet18
+- **Learning Rate**: 0.001 - 0.0001
+- **Batch Size**: 32 - 64
+- **Epochs**: 20 - 50
+- **Optimizer**: Adam or SGD with momentum
+- **Scheduler**: ReduceLROnPlateau or CosineAnnealing
+
+### Data Augmentation
+- **Rotation**: ±15 degrees
+- **Horizontal Flip**: 50% probability
+- **Color Jitter**: brightness, contrast, saturation
+- **Normalization**: ImageNet mean/std
+
+## 📊 Evaluation Metrics
+
+All notebooks track:
+- **Accuracy**: Overall classification accuracy
+- **Precision**: Per-class precision
+- **Recall**: Per-class recall
+- **F1-Score**: Harmonic mean of precision and recall
+- **Confusion Matrix**: Detailed error analysis
+- **Training/Validation Loss**: Loss curves over epochs
+
+## 🎨 Visualization
+
+Each notebook includes:
+- Sample images from each class
+- Training/validation loss curves
+- Training/validation accuracy curves
+- Confusion matrix
+- Per-class performance metrics
+- Misclassified samples analysis
+
+## 💡 Best Practices
+
+1. **Start Small**: Begin with small dataset (500 samples) for quick iteration
+2. **Use Template**: Use `template.ipynb` for consistent experiment structure
+3. **Track Everything**: Log all hyperparameters and results
+4. **Save Checkpoints**: Save best model and regular checkpoints
+5. **Visualize Results**: Always plot loss/accuracy curves and confusion matrix
+6. **Document Experiments**: Add markdown cells explaining your approach
+7. **Compare Models**: Use consistent train/val/test splits for fair comparison
+
+## 🔬 Experiment Ideas
+
+- [ ] Compare ResNet18 vs ResNet50 vs EfficientNet
+- [ ] Test different data augmentation strategies
+- [ ] Experiment with learning rate schedules
+- [ ] Try ensemble methods
+- [ ] Add attention mechanisms
+- [ ] Test on cross-country generalization
+- [ ] Fine-tune on specific document types
+- [ ] Implement mixup or cutmix augmentation
+
+## 📚 Resources
+
+### Model Architectures
+- [ResNet Paper](https://arxiv.org/abs/1512.03385)
+- [Vision Transformer Paper](https://arxiv.org/abs/2010.11929)
+- [EfficientNet Paper](https://arxiv.org/abs/1905.11946)
+
+### PyTorch Resources
+- [PyTorch Documentation](https://pytorch.org/docs/)
+- [torchvision Models](https://pytorch.org/vision/stable/models.html)
+- [Transfer Learning Tutorial](https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html)
+
+## 🤝 Contributing
+
+When adding new notebooks:
+1. Use the `template.ipynb` as starting point
+2. Follow naming convention: `{model}_{variant}_{samples}.ipynb`
+3. Document hyperparameters clearly
+4. Include visualizations
+5. Save results in `images/` subdirectory
+6. Update this README with your experiment
+
+## 📝 Notes
+
+- **Dataset**: Using `datasets/idnet/document_type_classification_country_split/`
+- **Models**: Saved to `models/checkpoints/`
+- **Results**: Plots saved in respective `images/` folders
+- **Train/Val/Test CSVs**: Each experiment directory contains its data splits
+- **GPU Recommended**: Training is faster with GPU (CUDA or MPS)
+
+---
+
+**Happy Experimenting! 🚀**
 

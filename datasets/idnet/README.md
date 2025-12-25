@@ -2,23 +2,29 @@
 
 ## 📊 Dataset Overview
 
-The IDNet dataset is a comprehensive collection of identity documents from three countries, designed for fraud detection research. It contains both authentic and forged documents with detailed metadata and fraud annotations.
+The IDNet dataset is a comprehensive collection of identity documents from multiple countries, designed for fraud detection research. It contains both authentic and forged documents with detailed metadata and fraud annotations.
 
 ### 🎯 Key Statistics
-- **Total Images**: 125,556
-- **Countries**: 3 (Greece, Russia, USA)
+- **Total Images**: 215,000+ (expanding)
+- **Countries**: 9+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Washington DC, Arizona, West Virginia)
 - **Document Types**: Passports, ID Cards, Driver's Licenses
 - **Fraud Types**: 6 different techniques
 - **Real vs Fake**: Balanced dataset (~50% each)
-- **Total Size**: ~49GB (raw data)
+- **Total Size**: ~130GB+ (raw data, expanding)
 
 ## 🌍 Countries & Document Types
 
 | Country | Code | Document Type | Images | Size |
 |---------|------|---------------|--------|------|
+| 🇦🇱 Albania | ALB | Passports | 29,895 | 17GB |
 | 🇬🇷 Greece | GRC | Passports | 41,852 | 8.9GB |
+| 🇱🇻 Latvia | LVA | Passports | 5,979 | ~16GB |
 | 🇷🇺 Russia | RUS | ID Cards | 41,852 | 8.4GB |
 | 🇺🇸 USA (West Virginia) | WV | Driver's Licenses | 41,852 | 31.5GB |
+| 🇺🇸 USA (Washington DC) | DC | Driver's Licenses | 29,895 | 18GB |
+| 🇺🇸 USA (Nevada) | NV | ID Cards | 29,895 | 9.9GB |
+| 🇺🇸 USA (Arizona) | AZ | Driver's Licenses | 5,979 | ~12GB |
+| 🇸🇰 Slovakia | SVK | ID Cards | 5,979 | ~4.0GB |
 
 ## 🕵️ Fraud Types
 
@@ -35,6 +41,21 @@ The IDNet dataset is a comprehensive collection of identity documents from three
 
 ```
 idnet/
+├── document_type_classification_country_split/  # Document type classification dataset
+│   ├── data/
+│   │   └── dataset.csv           # Combined dataset from all countries for document type classification
+│   └── images/                   # Symlinked images from all countries
+│
+├── ALB/                          # Albanian Passports
+│   ├── positive/                 # Real passports (5,979 images)
+│   ├── fraud1_copy_and_move/     # Copy & move fraud (5,979 images)
+│   ├── fraud2_face_morphing/     # Face morphing fraud (5,979 images)
+│   ├── fraud3_face_replacement/  # Face replacement fraud (5,979 images)
+│   ├── fraud4_combined/          # Combined fraud (5,979 images)
+│   └── meta/                     # Metadata JSON files
+│       ├── basic/                # Personal information (5,979 files)
+│       └── detailed_with_fraud_info/ # Fraud annotations
+│
 ├── GRC/                          # Greek Passports
 │   └── GRC/
 │       ├── positive/             # Real passports (4,592 images)
@@ -74,6 +95,62 @@ idnet/
 │           ├── basic/            # Personal information
 │           └── detailed_with_fraud_info/ # Fraud annotations
 │
+├── LVA/                          # Latvian Passports
+│   ├── positive/                 # Real passports (5,979 images)
+│   ├── fraud1_copy_and_move/     # Copy & move fraud
+│   ├── fraud2_face_morphing/     # Face morphing fraud
+│   ├── fraud3_face_replacement/  # Face replacement fraud
+│   ├── fraud4_combined/          # Combined fraud
+│   └── meta/                      # Metadata JSON files
+│       ├── basic/                # Personal information
+│       └── detailed_with_fraud_info/ # Fraud annotations
+│
+├── AZ/                           # Arizona Driver's Licenses
+│   ├── positive/                 # Real licenses (5,979 images)
+│   ├── fraud1_copy_and_move/     # Copy & move fraud
+│   ├── fraud2_face_morphing/     # Face morphing fraud
+│   ├── fraud3_face_replacement/  # Face replacement fraud
+│   ├── fraud4_combined/          # Combined fraud
+│   └── meta/                      # Metadata JSON files
+│       ├── basic/                # Personal information
+│       └── detailed_with_fraud_info/ # Fraud annotations
+│
+├── SVK/                          # Slovakian ID Cards
+│   └── SVK/
+│       ├── positive/             # Real ID cards (5,979 images)
+│       ├── fraud1_copy_and_move/ # Copy & move fraud (5,979 images)
+│       ├── fraud2_face_morphing/ # Face morphing fraud (5,979 images)
+│       ├── fraud3_face_replacement/ # Face replacement fraud (5,979 images)
+│       ├── fraud4_combined/      # Combined fraud (5,979 images)
+│       └── meta/                 # Metadata JSON files
+│           ├── basic/            # Personal information
+│           └── detailed_with_fraud_info/ # Fraud annotations
+│
+├── NV/                           # Nevada ID Cards
+│   ├── positive/                 # Real ID cards (5,979 images)
+│   ├── fraud1_copy_and_move/     # Copy & move fraud (5,979 images)
+│   ├── fraud2_face_morphing/     # Face morphing fraud (5,979 images)
+│   ├── fraud3_face_replacement/  # Face replacement fraud (5,979 images)
+│   ├── fraud4_combined/          # Combined fraud (5,979 images)
+│   └── meta/                     # Metadata JSON files
+│       ├── basic/                # Personal information (5,979 files)
+│       └── detailed_with_fraud_info/ # Fraud annotations
+│
+├── DC/                           # Washington DC Driver's Licenses
+│   ├── positive/                 # Real licenses (5,979 images)
+│   ├── fraud1_copy_and_move/     # Copy & move fraud (5,979 images)
+│   ├── fraud2_face_morphing/     # Face morphing fraud (5,979 images)
+│   ├── fraud3_face_replacement/  # Face replacement fraud (5,979 images)
+│   ├── fraud4_combined/          # Combined fraud (5,979 images)
+│   └── meta/                     # Metadata JSON files
+│       ├── basic/                # Personal information (5,979 files)
+│       └── detailed_with_fraud_info/ # Fraud annotations
+│
+├── document_type_classification_country_split/  # Document type classification dataset
+│   ├── data/
+│   │   └── dataset.csv           # Combined dataset from all countries
+│   └── images/                   # Symlinked images
+│
 ├── GRC_Unified_Dataset.csv       # Processed Greek passports dataset
 ├── RUS_Unified_Dataset.csv       # Processed Russian ID cards dataset
 ├── WV_Unified_Dataset.csv        # Processed American driver's licenses dataset
@@ -111,6 +188,18 @@ Each CSV file contains the following columns:
 
 ### Dataset Statistics
 
+#### ALB (Albanian Passports)
+- **Total Images**: 29,895
+- **Real Images**: 5,979 (20.0%)
+- **Fake Images**: 23,916 (80.0%)
+- **Fraud Distribution**:
+  - copy_and_move: 5,979 (25.0%)
+  - face_morphing: 5,979 (25.0%)
+  - face_replacement: 5,979 (25.0%)
+  - combined: 5,979 (25.0%)
+- **Document Type**: Passports
+- **Note**: Contains 4 fraud types (fraud1-4)
+
 #### GRC (Greek Passports)
 - **Total Images**: 41,852
 - **Real Images**: 4,592 (11.0%)
@@ -147,13 +236,60 @@ Each CSV file contains the following columns:
   - inpaint_and_rewrite: 4,091 (10.1%)
   - crop_and_replace: 1,378 (3.4%)
 
+#### LVA (Latvian Passports)
+- **Total Images**: ~30,000+ (all categories)
+- **Real Images**: 5,979 (positive folder)
+- **Document Type**: Passports
+- **Note**: Dataset is currently being integrated for document type classification model training
+
+#### AZ (Arizona Driver's Licenses)
+- **Total Images**: ~35,000+ (all categories)
+- **Real Images**: 5,979 (positive folder)
+- **Document Type**: Driver's Licenses
+- **Note**: Dataset is currently being integrated for document type classification model training
+
+#### SVK (Slovakian ID Cards)
+- **Total Images**: ~35,000+ (all categories)
+- **Real Images**: 5,979 (positive folder)
+- **Document Type**: ID Cards
+- **Note**: Dataset is currently being integrated for document type classification model training
+
+#### NV (Nevada ID Cards)
+- **Total Images**: 29,895
+- **Real Images**: 5,979 (20.0%)
+- **Fake Images**: 23,916 (80.0%)
+- **Fraud Distribution**:
+  - copy_and_move: 5,979 (25.0%)
+  - face_morphing: 5,979 (25.0%)
+  - face_replacement: 5,979 (25.0%)
+  - combined: 5,979 (25.0%)
+- **Document Type**: ID Cards
+- **Note**: Contains 4 fraud types (fraud1-4)
+
+#### DC (Washington DC Driver's Licenses)
+- **Total Images**: 29,895
+- **Real Images**: 5,979 (20.0%)
+- **Fake Images**: 23,916 (80.0%)
+- **Fraud Distribution**:
+  - copy_and_move: 5,979 (25.0%)
+  - face_morphing: 5,979 (25.0%)
+  - face_replacement: 5,979 (25.0%)
+  - combined: 5,979 (25.0%)
+- **Document Type**: Driver's Licenses
+- **Note**: Contains 4 fraud types (fraud1-4)
+
 ## 🔧 Data Processing Scripts
 
 ### Available Scripts
 - `src/data/create_unified_grc_dataset.py` - Create GRC unified dataset
 - `src/data/create_unified_rus_dataset.py` - Create RUS unified dataset
 - `src/data/create_unified_wv_dataset.py` - Create WV unified dataset
-- `src/data/fix_fraud5_data.py` - Fix data quality issues
+- `src/data/create_unified_idnet_dataset.py` - Create unified dataset from all countries
+- `src/data/create_document_type_dataset.py` - Create document type classification dataset
+- `src/data/prepare_idnet_full_dataset.py` - Prepare full IDNet dataset with multiple countries
+- `src/data/fix_dataset_splits.py` - Fix train/val/test splits to prevent data leakage
+- `src/data/split_dataset.py` - Dataset splitting utilities
+- `src/data/load_idnet_dataset.py` - Dataset loading utilities
 - `src/data/explore_idnet.py` - Data exploration utilities
 
 ### Usage Example
@@ -174,24 +310,32 @@ print(df['fraud_type'].value_counts())
 
 ## 🎯 Use Cases
 
-### 1. Binary Classification
+### 1. Document Type Classification (Current Focus)
+- **Task**: Classify document type (Passport, ID Card, Driver's License)
+- **Input**: Document images from multiple countries
+- **Output**: Multi-class classification (3 document types)
+- **Dataset**: `document_type_classification_country_split/`
+- **Approach**: Train on mixed countries, test generalization
+- **Goal**: Build robust document type classifier
+
+### 2. Binary Classification (Future)
 - **Task**: Real vs Fake document detection
 - **Input**: Document images
 - **Output**: Binary classification (real/fake)
 - **Evaluation**: Accuracy, Precision, Recall, F1-Score
 
-### 2. Multi-Class Classification
+### 3. Fraud Type Classification (Future)
 - **Task**: Fraud type identification
 - **Input**: Document images
 - **Output**: Fraud type classification
 - **Classes**: 6 fraud types + real
 
-### 3. Cross-Country Analysis
+### 4. Cross-Country Analysis
 - **Task**: Model generalization across countries
-- **Approach**: Train on one country, test on others
+- **Approach**: Train on multiple countries, test on unseen countries
 - **Goal**: Understand cultural/document differences
 
-### 4. Document Type Analysis
+### 5. Document Type Analysis
 - **Task**: Performance across document types
 - **Approach**: Compare model performance on passports vs ID cards vs licenses
 - **Goal**: Identify document-specific challenges

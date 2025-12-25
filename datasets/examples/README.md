@@ -24,12 +24,7 @@ Each example demonstrates:
 - `fake_face_morphing_generated.photos_v3_0240363.png` - Face morphing fraud
 - `fake_face_replacement_generated.photos_v3_0240363.png` - Face replacement fraud
 - `fake_combined_generated.photos_v3_0240363.png` - Combined fraud
-
-**JSON Files** (`json_files/`):
-- `basic_metadata_generated.photos_v3_0240363.json` - Personal information
-- `detailed_face_morphing_annotation.json` - Face morphing fraud details
-- `detailed_face_replacement_annotation.json` - Face replacement fraud details
-- `detailed_combined_annotation.json` - Combined fraud details
+- `basic_metadata_generated.photos_v3_0240363.json` - Personal information metadata
 
 ### 🪪 RUS Example (Russian ID Cards)
 **Location**: `rus_example/`
@@ -43,12 +38,7 @@ Each example demonstrates:
 - `fake_face_morphing_generated.photos_v3_0240363.png` - Face morphing fraud
 - `fake_face_replacement_generated.photos_v3_0240363.png` - Face replacement fraud
 - `fake_combined_generated.photos_v3_0240363.png` - Combined fraud
-
-**JSON Files** (`json_files/`):
-- `basic_metadata_generated.photos_v3_0240363.json` - Personal information
-- `detailed_face_morphing_annotation.json` - Face morphing fraud details
-- `detailed_face_replacement_annotation.json` - Face replacement fraud details
-- `detailed_combined_annotation.json` - Combined fraud details
+- `basic_metadata_generated.photos_v3_0240363.json` - Personal information metadata
 
 ### 🚗 WV Example (American Driver's Licenses)
 **Location**: `wv_example/`
@@ -62,12 +52,7 @@ Each example demonstrates:
 - `fake_face_morphing_generated.photos_v3_0240363.png` - Face morphing fraud
 - `fake_face_replacement_generated.photos_v3_0240363.png` - Face replacement fraud
 - `fake_combined_generated.photos_v3_0240363.png` - Combined fraud
-
-**JSON Files** (`json_files/`):
-- `basic_metadata_generated.photos_v3_0240363.json` - Personal information
-- `detailed_face_morphing_annotation.json` - Face morphing fraud details
-- `detailed_face_replacement_annotation.json` - Face replacement fraud details
-- `detailed_combined_annotation.json` - Combined fraud details
+- `basic_metadata_generated.photos_v3_0240363.json` - Personal information metadata
 
 ## 🔍 Fraud Types Explained
 
@@ -83,8 +68,8 @@ Each example demonstrates:
 - **Total Examples**: 3 (one per document type)
 - **Images per Example**: 5 (1 original + 4 fake variations)
 - **Total Images**: 15
-- **JSON Files**: 12 (4 per example: 1 basic + 3 detailed)
-- **Countries Covered**: 3 (Greece, Russia, USA)
+- **JSON Files**: 3 (1 basic metadata per example)
+- **Countries Covered**: 3 (Greece, Russia, USA - West Virginia)
 - **Document Types**: 3 (Passports, ID Cards, Driver's Licenses)
 
 ## 🎯 Usage
