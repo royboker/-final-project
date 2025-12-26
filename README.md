@@ -72,6 +72,25 @@ final-project/
 │   ├── checkpoints/     # Model checkpoints during training
 │   └── README.md        # Model documentation
 │
+├── backend/               # FastAPI Backend
+│   ├── app/
+│   │   ├── models/       # Database schemas & Pydantic models
+│   │   ├── routers/      # API Endpoints
+│   │   ├── services/     # Business logic (ML, Cloudinary)
+│   │   ├── main.py       # Application entry point
+│   │   └── database.py   # DB Connection
+│   ├── PLAN.md           # Backend technical plan
+│   └── requirements.txt  # Python dependencies
+│
+├── frontend/              # React Frontend
+│   ├── src/
+│   │   ├── components/   # Reusable UI parts
+│   │   ├── pages/        # Main views (Dashboard, Analyze)
+│   │   ├── context/      # State management
+│   │   └── App.jsx       # Main component & Routing
+│   ├── PLAN.md           # Frontend technical plan
+│   └── package.json      # JS dependencies
+│
 ├── results/             # Experiment results
 │   ├── figures/         # Visualizations
 │   └── logs/            # Training logs
@@ -118,20 +137,7 @@ python -m ipykernel install --user --name=final-project --display-name "Python (
 4. **Train Models**: Use the notebooks in `notebooks/document_type_classification/` for model training
 5. **Build Custom Models**: Create fraud detection models using the processed data
 
-### Data Loading Example
-```python
-import pandas as pd
 
-# Load unified datasets
-grc_df = pd.read_csv('datasets/idnet/GRC_Unified_Dataset.csv')
-rus_df = pd.read_csv('datasets/idnet/RUS_Unified_Dataset.csv')
-wv_df = pd.read_csv('datasets/idnet/WV_Unified_Dataset.csv')
-
-# Check data structure
-print(f"GRC: {grc_df.shape[0]} images, {grc_df['is_real'].sum()} real")
-print(f"RUS: {rus_df.shape[0]} images, {rus_df['is_real'].sum()} real")
-print(f"WV: {wv_df.shape[0]} images, {wv_df['is_real'].sum()} real")
-```
 
 ## 🛠️ Key Libraries
 
