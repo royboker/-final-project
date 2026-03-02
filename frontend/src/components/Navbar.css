@@ -71,7 +71,44 @@
 .btn-primary:hover {
   opacity: 0.88;
 }
+.nav-user{
+  display:inline-flex;
+  align-items:center;
+  gap:.45rem;
+  padding:.45rem 1rem;
+  border-radius:999px;
+  border:1px solid var(--border);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  font-size:.875rem;
+  cursor:default;
+}
 
+.nav-user strong{
+  color:var(--white);
+  font-weight:700;
+}
+
+.nav-role{
+  font-size:.75rem;
+  font-weight:800;
+  letter-spacing:.04em;
+  padding:.18rem .55rem;
+  border-radius:999px;
+  border:1px solid rgba(163,230,53,.35);
+  color:var(--lime);
+}
+
+.nav-role.admin{
+  border-color: rgba(239,68,68,.45);
+  color:#ef4444;
+}
+
+/* admin logout button */
+.btn-admin{
+  background:#ef4444;
+  box-shadow:0 0 18px rgba(239,68,68,.25);
+}
 @media (max-width: 680px) {
   .nav { padding: 1rem 1.2rem; }
   .nav-links .btn-ghost:not(:last-of-type) { display: none; }

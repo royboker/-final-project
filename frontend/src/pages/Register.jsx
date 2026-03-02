@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../lib/api";
 import "./Login.css";
 import "./Register.css";
 
@@ -20,24 +21,46 @@ export default function Register() {
   }
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.name || !form.email || !form.password || !form.confirm) {
-      setError("Please fill in all fields."); return;
-    }
-    if (form.password !== form.confirm) {
-      setError("Passwords do not match."); return;
-    }
-    if (form.password.length < 8) {
-      setError("Password must be at least 8 characters."); return;
-    }
-    if (!form.terms) {
-      setError("You must accept the terms."); return;
-    }
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setLoading(false);
-    navigate("/dashboard");
+  e.preventDefault();
+
+  if (!form.name || !form.email || !form.password || !form.confirm) {
+    setError("Please fill in all fields."); 
+    return;
   }
+  if (form.password !== form.confirm) {
+    setError("Passwords do not match."); 
+    return;
+  }
+  if (form.password.length < 8) {
+    setError("Password must be at least 8 characters."); 
+    return;
+  }
+  if (!form.terms) {
+    setError("You must accept the terms."); 
+    return;
+  }
+
+  setLoading(true);
+  setError("");
+
+  try {
+    const res = await api.register({
+      name: form.name,
+      email: form.email,
+      password: form.password,
+    });
+
+    // הבאקנד שלך מחזיר token
+    localStorage.setItem("token", res.token);
+    localStorage.setItem("user", JSON.stringify(res.user));
+
+    navigate("/");
+  } catch (err) {
+    setError(err.message || "Registration failed");
+  } finally {
+    setLoading(false);
+  }
+}
 
   const strength = getStrength(form.password);
 

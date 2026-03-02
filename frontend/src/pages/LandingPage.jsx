@@ -4,6 +4,8 @@ import Navbar from "../components/Navbar";
 import ScanDemo from "../components/ScanDemo";
 import "./LandingPage.css";
 
+
+
 // ── Custom Hook ───────────────────────────────────────────────────────────────
 function useReveal() {
   const ref = useRef(null);
@@ -123,6 +125,10 @@ const DocCard = ({ className, badge, badgeCls = "" }) => (
 export default function LandingPage() {
   const navigate = useNavigate();
 
+  const token = localStorage.getItem("token");
+const user = JSON.parse(localStorage.getItem("user") || "null");
+const isAuthed = Boolean(token);
+
   const statsRef    = useReveal();
   const featuresRef = useReveal();
   const flowRef     = useReveal();
@@ -156,12 +162,33 @@ export default function LandingPage() {
           identify fraudulent identity documents in seconds fast, secure, and reliable.
         </p>
 
-        <div className="hero-actions">
-          <button className="btn-primary-lg" onClick={() => navigate("/register")}>
-            Start scanning →
-          </button>
-          <a href="#how-it-works" className="btn-ghost-lg">How it works</a>
-        </div>
+<div className="hero-actions">
+  {isAuthed ? (
+    <>
+      <a href="#upload" className="btn-primary-lg">Start scanning →</a>
+      <a href="#how-it-works" className="btn-ghost-lg">How it works</a>
+    </>
+  ) : (
+<>
+  <div
+    className="signin-cta"
+    style={{ transform: "translateX(-35px)" }} // שמאלה
+  >
+    <span className="pointerFx" aria-hidden="true">
+      <span className="pointerTrail" />
+      <span className="spark s1">✦</span>
+      <span className="spark s2">✧</span>
+      <span className="spark s3">✦</span>
+      👉
+    </span>
+
+    <button className="btn-ghost-lg cta-glow" onClick={() => navigate("/login")}>
+      Sign in
+    </button>
+  </div>
+</>
+  )}
+</div>
       </section>
 
       {/* STATS */}
@@ -174,30 +201,37 @@ export default function LandingPage() {
         ))}
       </div>
 
-      {/* UPLOAD ZONE */}
-      <section className="section" id="upload">
-        <h2 className="section-title">Scan a document now</h2>
-        <p className="section-sub">Upload a file and our AI will analyze it in seconds</p>
+{isAuthed && (
+  <>
+    {/* UPLOAD ZONE */}
+    <section className="section" id="upload">
+      <h2 className="section-title">Scan a document now</h2>
+      <p className="section-sub">Upload a file and our AI will analyze it in seconds</p>
 
-        <div className="upload-zone" onClick={() => navigate("/register")}>
-          <div className="upload-icon">
-            <SvgIcon>
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-            </SvgIcon>
-          </div>
-          <h3>Drag & drop your file here</h3>
-          <p>Up to 100MB per file</p>
-          <div className="file-types">
-            {FILE_TYPES.map(t => <span className="tag" key={t}>{t}</span>)}
-          </div>
-          <button
-            className="btn-primary-lg"
-            onClick={e => { e.stopPropagation(); navigate("/register"); }}
-          >
-            Get started free
-          </button>
+      <div className="upload-zone" onClick={() => navigate("/register")}>
+        <div className="upload-icon">
+          <SvgIcon>
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+          </SvgIcon>
         </div>
-      </section>
+
+        <h3>Drag & drop your file here</h3>
+        <p>Up to 100MB per file</p>
+
+        <div className="file-types">
+          {FILE_TYPES.map(t => <span className="tag" key={t}>{t}</span>)}
+        </div>
+
+        <button
+          className="btn-primary-lg"
+          onClick={e => { e.stopPropagation(); navigate("/register"); }}
+        >
+          Get started free
+        </button>
+      </div>
+    </section>
+  </>
+)}
 
       {/* FEATURES */}
       <section className="section" id="features">
@@ -253,6 +287,8 @@ export default function LandingPage() {
   </section>
 </div>
 
+{!isAuthed && (
+  <>
       {/* CTA */}
       <div className="cta-section">
         <h2>Ready to get started?</h2>
@@ -261,6 +297,10 @@ export default function LandingPage() {
           Create free account →
         </button>
       </div>
+  </>
+)}
+
+
 
       {/* FOOTER */}
       <footer className="footer">
