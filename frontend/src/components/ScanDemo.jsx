@@ -94,29 +94,34 @@ export default function ScanDemo() {
   }
 
   // ── Step 2: doc card click → ring ─────────────────────────────────────────
-  function pickDoc(docId) {
-    if (phase !== "pick") return;
-    setLoadingDoc(docId);
-    setRingProgress(0);
-    setPhase("loading");
+function pickDoc(docId) {
+  if (phase !== "pick") return;
+  
+  setLoadingDoc(docId);
+  setRingProgress(0);
+  setPhase("loading");
 
-    const duration = 1200;
-    const start = performance.now();
-    function animate(now) {
-      const p = Math.min(((now - start) / duration) * 100, 100);
-      setRingProgress(p);
-      if (p < 100) {
-        rafRef.current = requestAnimationFrame(animate);
-      } else {
-        const random = DOC_TYPES[Math.floor(Math.random() * 3)];
-        setDocType(random);
-        setPip(2);
-        setDetectStep(0);
-        setPhase("detecting");
-      }
+  const duration = 1200;
+  const start = performance.now();
+  
+  function animate(now) {
+    const p = Math.min(((now - start) / duration) * 100, 100);
+    setRingProgress(p);
+    if (p < 100) {
+      rafRef.current = requestAnimationFrame(animate);
+    } else {
+      const random = DOC_TYPES[Math.floor(Math.random() * 3)];
+      setDocType(random);
+      setPip(2);
+      setDetectStep(0);
+      setPhase("detecting");
     }
-    rafRef.current = requestAnimationFrame(animate);
   }
+  
+  setTimeout(() => {
+    rafRef.current = requestAnimationFrame(animate);
+  }, 50);
+}
 
   // ── Step 3: detect steps ──────────────────────────────────────────────────
   useEffect(() => {
@@ -268,12 +273,12 @@ export default function ScanDemo() {
                     onClick={() => pickDoc(d)}
                     style={{ cursor: phase === "loading" ? "not-allowed" : "pointer" }}
                   >
-                    <div className="demo-doc-img-wrap">
-                      <div className="demo-doc-icon-box">
-                        <DocIcon type={d} />
-                      </div>
-                      {loadingDoc === d && <RingProgress progress={ringProgress} />}
-                    </div>
+<div className="demo-doc-img-wrap" style={{ position: "relative" }}>
+  <div className="demo-doc-icon-box">
+    <DocIcon type={d} />
+  </div>
+  {loadingDoc === d && <RingProgress progress={ringProgress} W={110} H={140} />}
+</div>
                     <span className="demo-doc-label">{DOC_LABELS[d]}</span>
                   </div>
                 ))}
@@ -324,17 +329,18 @@ export default function ScanDemo() {
           {phase === "scanning" && docType && (
             <div className="demo-scanning">
               <div className="demo-scan-doc">
-                <div style={{ position: "relative", width: 38, height: 38, flexShrink: 0 }}>
-                  <img
-                    src={DOC_IMGS[docType]}
-                    alt={DOC_LABELS[docType]}
-                    style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover", border: "1px solid var(--border)", display: "block" }}
-                    onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
-                  />
-                  <div style={{ display: "none", width: 38, height: 38, borderRadius: "50%", background: "var(--surface2)", alignItems: "center", justifyContent: "center", color: "#e63946" }}>
-                    <DocIcon type={docType} />
-                  </div>
-                </div>
+<div style={{ position: "relative", width: 64, height: 44, flexShrink: 0 }}>
+  <img
+    src={DOC_IMGS[docType]}
+    alt={DOC_LABELS[docType]}
+    style={{ width: 64, height: 44, borderRadius: "8px", objectFit: "cover", border: "1px solid var(--border)", display: "block" }}
+    onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
+  />
+  <div style={{ display: "none", width: 64, height: 44, borderRadius: "8px", background: "var(--surface2)", alignItems: "center", justifyContent: "center", color: "#e63946" }}>
+    <DocIcon type={docType} />
+  </div>
+</div>
+
                 <div className="demo-scan-info">
                   <span className="demo-scan-name">{DOC_LABELS[docType]}</span>
                   <span className="demo-scan-sub">Running {DOC_FORGE_MDL[docType]}</span>
@@ -400,7 +406,7 @@ export default function ScanDemo() {
                         <img
                           src={DOC_IMGS[docType]}
                           alt={DOC_LABELS[docType]}
-                          style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.1)" }}
+                          style={{ width: 72, height: 48, borderRadius: "8px", objectFit: "cover", border: "2px solid rgba(255,255,255,0.1)" }}
                           onError={e => e.target.style.display = "none"}
                         />
                       </div>

@@ -558,7 +558,7 @@ body {
 }
 
 .stack-item:hover {
-  border-color: rgba(230, 57, 70, 0.35);
+  border-color:var(--lime);
   color: var(--white);
 }
 
@@ -621,7 +621,21 @@ body {
 @media (max-width: 680px) {
   .flow-steps { grid-template-columns: 1fr 1fr; }
   .flow-steps::before { display: none; }
-  .stats { gap: 2rem; }
   .footer { flex-direction: column; align-items: center; text-align: center; }
   .doc-card-2, .doc-card-4 { display: none; }
+  .doc-card-1, .doc-card-3 { display: none; }
+
+  .hero { padding: 6rem 1.2rem 3rem; }
+  .hero-title { font-size: 2.2rem; letter-spacing: -1px; }
+  .hero-sub { font-size: 0.9rem; }
+  .hero-actions { flex-direction: column; align-items: center; }
+
+  .stats { gap: 1.5rem; padding: 2rem 1rem; }
+  .stat-num { font-size: 1.8rem; }
+
+  .section { padding: 3.5rem 1.2rem; }
+  .section-title { font-size: 1.7rem; }
+
+  .footer { gap: 1rem; }
+  .step::after { display: none; }
 }

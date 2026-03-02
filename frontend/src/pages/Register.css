@@ -1,0 +1,53 @@
+/* ── Password strength ───────────────────────────────────────────────────────── */
+.reg-strength {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+.reg-strength-bars { display: flex; gap: 3px; flex: 1; }
+.reg-bar {
+  flex: 1; height: 3px; border-radius: 100px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  transition: background 0.3s;
+}
+.reg-bar.weak   { background: #ef4444; }
+.reg-bar.fair   { background: #f97316; }
+.reg-bar.good   { background: #eab308; }
+.reg-bar.strong { background: var(--lime); }
+
+.reg-strength-label {
+  font-size: 0.72rem; font-weight: 600; min-width: 40px;
+}
+.reg-strength-label.weak   { color: #ef4444; }
+.reg-strength-label.fair   { color: #f97316; }
+.reg-strength-label.good   { color: #eab308; }
+.reg-strength-label.strong { color: var(--lime); }
+
+.reg-mismatch { font-size: 0.75rem; color: var(--red); margin-top: 0.25rem; }
+.reg-match    { font-size: 0.75rem; color: #4ade80;    margin-top: 0.25rem; }
+
+/* ── Link button ─────────────────────────────────────────────────────────────── */
+.auth-link {
+  background: none; border: none;
+  color: var(--lime); font-weight: 600;
+  cursor: pointer; font-size: inherit;
+  font-family: inherit; padding: 0;
+  transition: opacity 0.2s;
+}
+.auth-link:hover { opacity: 0.75; }
+
+/* ── Features list (right panel) ─────────────────────────────────────────────── */
+.reg-features {
+  display: flex; flex-direction: column; gap: 0.65rem;
+  text-align: left; margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.reg-feature {
+  display: flex; align-items: center; gap: 0.7rem;
+  font-size: 0.83rem; color: var(--text);
+}
+.reg-feature-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--lime); flex-shrink: 0;
+}

@@ -223,7 +223,7 @@
   padding: 0.9rem 1.2rem; background: var(--surface2);
   border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
 }
-.demo-scan-info { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; }
+.demo-scan-info { display: flex; flex-direction: column; gap: 0.15rem;  padding-left: 0.5rem; flex: 1; }
 .demo-scan-name { color: var(--white); font-size: 0.85rem; font-weight: 600; }
 .demo-scan-sub  { color: var(--muted); font-size: 0.72rem; }
 .demo-mbadge { font-family: monospace; font-size: 0.65rem; padding: 2px 7px; border-radius: 100px; }
@@ -326,3 +326,4 @@
   .demo-left { border-right: none; border-bottom: 1px solid var(--border); }
   .demo-meta { grid-template-columns: 1fr 1fr; }
 }
+
