@@ -24,7 +24,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const { isAuthed, user, logout } = useAuth();
 
-  const isAdmin = (user?.role || "user") === "admin";
+  const role = String(user?.role ?? "user").trim().toLowerCase();
+  const isAdmin = role === "admin";
 
   return (
     <nav className="nav">
