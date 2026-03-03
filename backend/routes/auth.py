@@ -1,8 +1,14 @@
 from fastapi import APIRouter, HTTPException, status
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
+
 from dotenv import load_dotenv
 import os
+
+# SMRT
+
+import secrets
+from utils.email import send_verification_email, send_reset_email
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, InvalidHash
@@ -69,27 +75,26 @@ def register(data: UserRegister):
     if users_collection.find_one({"email": email}):
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    verify_token = secrets.token_urlsafe(32)
+
     user = {
         "name": data.name.strip(),
         "email": email,
         "password": hash_password(data.password),
         "role": "user",
+        "is_verified": False,
+        "verify_token": verify_token,
         "created_at": datetime.utcnow(),
     }
 
     result = users_collection.insert_one(user)
     user_id = str(result.inserted_id)
-    token = create_token(user_id, email, "user")
+
+    send_verification_email(email, verify_token, data.name.strip())
 
     return {
-        "message": "Account created successfully",
-        "token": token,
-        "user": {
-            "id": user_id,
-            "name": user["name"],
-            "email": email,
-            "role": "user",
-        },
+        "message": "Check your email to verify your account",
+        "user_id": user_id,
     }
 
 # ── google ─────────────────────────────────────────────────────────────────────
@@ -144,6 +149,9 @@ def login(data: UserLogin):
             detail="Invalid email or password",
         )
 
+    if not user.get("is_verified", False):
+        raise HTTPException(status_code=403, detail="Please verify your email first")
+
     user_id = str(user["_id"])
     token = create_token(user_id, user["email"], user.get("role", "user"))
 
@@ -158,4 +166,74 @@ def login(data: UserLogin):
         },
     }
 
+
+@router.get("/verify-email")
+def verify_email(token: str):
+    user = users_collection.find_one({"verify_token": token})
+
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    users_collection.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"is_verified": True}, "$unset": {"verify_token": ""}}
+    )
+
+    user_id = str(user["_id"])
+    jwt_token = create_token(user_id, user["email"], user.get("role", "user"))
+
+    return {
+        "message": "Email verified successfully",
+        "token": jwt_token,
+        "user": {
+            "id": user_id,
+            "name": user.get("name", ""),
+            "email": user["email"],
+            "role": user.get("role", "user"),
+        },
+    }
+@router.post("/forgot-password")
+def forgot_password(data: dict):
+    email = normalize_email(data.get("email", ""))
+    user = users_collection.find_one({"email": email})
+
+    if not user:
+        return {"message": "If this email exists, a reset link has been sent"}
+
+    reset_token = secrets.token_urlsafe(32)
+    reset_expires = datetime.utcnow() + timedelta(hours=1)
+
+    users_collection.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"reset_token": reset_token, "reset_expires": reset_expires}}
+    )
+
+    send_reset_email(email, reset_token, user.get("name", ""))
+    return {"message": "If this email exists, a reset link has been sent"}
+
+
+@router.post("/reset-password")
+def reset_password(data: dict):
+    token = data.get("token", "")
+    new_password = data.get("password", "")
+
+    user = users_collection.find_one({"reset_token": token})
+
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    if user.get("reset_expires") < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Reset link has expired")
+
+    users_collection.update_one(
+        {"_id": user["_id"]},
+        {
+            "$set": {"password": hash_password(new_password)},
+            "$unset": {"reset_token": "", "reset_expires": ""}
+        }
+    )
+
+    return {"message": "Password reset successfully"}
+
+    
     

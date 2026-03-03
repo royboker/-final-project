@@ -42,15 +42,13 @@ export default function Register() {
     setError("");
 
     try {
-      const res = await api.register({
+      await api.register({
         name: form.name,
         email: form.email,
         password: form.password,
       });
 
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("user", JSON.stringify(res.user));
-      navigate("/");
+      navigate("/check-email");
     } catch (err) {
       setError(err.message || "Registration failed");
     } finally {
@@ -226,7 +224,6 @@ export default function Register() {
   );
 }
 
-// ── Password strength ─────────────────────────────────────────────────────────
 function getStrength(password) {
   let score = 0;
   if (password.length >= 8) score++;
@@ -238,7 +235,6 @@ function getStrength(password) {
   return { score, label: labels[score] || "Weak", cls: classes[score] || "weak" };
 }
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
 function LogoIcon() {
   return (
     <svg width="30" height="30" viewBox="0 0 32 32" fill="none">

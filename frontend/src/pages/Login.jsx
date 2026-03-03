@@ -101,7 +101,7 @@ export default function Login() {
             <div className="auth-field">
               <div className="auth-field-header">
                 <label htmlFor="password">Password</label>
-                <button type="button" className="auth-forgot" onClick={() => {}}>
+                <button type="button" className="auth-forgot" onClick={() => navigate("/forgot-password")}>
                   Forgot password?
                 </button>
               </div>

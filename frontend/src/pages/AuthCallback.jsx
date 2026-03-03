@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const { setSession } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -14,13 +16,12 @@ export default function AuthCallback() {
       role: params.get("role"),
     };
 
-    if (token) {
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-      navigate("/", { replace: true });
-    } else {
-      navigate("/login", { replace: true });
-    }
+if (token) {
+  setSession(token, user);
+  setTimeout(() => navigate("/", { replace: true }), 100);
+} else {
+  navigate("/login", { replace: true });
+}
   }, []);
 
   return (
