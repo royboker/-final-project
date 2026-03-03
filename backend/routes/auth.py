@@ -10,7 +10,25 @@ from argon2.exceptions import VerifyMismatchError, InvalidHash
 from db.mongo import users_collection
 from models.user import UserRegister, UserLogin
 
+# google
+from authlib.integrations.starlette_client import OAuth
+from starlette.requests import Request
+from starlette.responses import RedirectResponse
+
 load_dotenv()
+
+
+oauth = OAuth()
+oauth.register(
+    name="google",
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"},
+)
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -74,6 +92,46 @@ def register(data: UserRegister):
         },
     }
 
+# ── google ─────────────────────────────────────────────────────────────────────
+
+@router.get("/google")
+async def google_login(request: Request):
+    redirect_uri = request.url_for("google_callback")
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@router.get("/google/callback", name="google_callback")
+async def google_callback(request: Request):
+    token = await oauth.google.authorize_access_token(request)
+    user_info = token.get("userinfo")
+
+    if not user_info:
+        raise HTTPException(status_code=400, detail="Failed to get user info from Google")
+
+    email = normalize_email(user_info["email"])
+    existing = users_collection.find_one({"email": email})
+
+    if existing:
+        user_id = str(existing["_id"])
+        role = existing.get("role", "user")
+        name = existing.get("name", user_info.get("name", ""))
+    else:
+        new_user = {
+            "name": user_info.get("name", "").strip(),
+            "email": email,
+            "password": None,
+            "role": "user",
+            "google_id": user_info.get("sub"),
+            "created_at": datetime.utcnow(),
+        }
+        result = users_collection.insert_one(new_user)
+        user_id = str(result.inserted_id)
+        role = "user"
+        name = new_user["name"]
+
+    jwt_token = create_token(user_id, email, role)
+    return RedirectResponse(
+        url=f"{FRONTEND_URL}/auth/callback?token={jwt_token}&name={name}&email={email}&role={role}&id={user_id}"
+    )
 # ── Login ─────────────────────────────────────────────────────────────────────
 @router.post("/login")
 def login(data: UserLogin):
@@ -99,3 +157,5 @@ def login(data: UserLogin):
             "role": user.get("role", "user"),
         },
     }
+
+    

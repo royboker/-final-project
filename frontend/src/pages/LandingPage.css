@@ -753,8 +753,17 @@ body {
   .hero-sub { font-size: 0.9rem; }
   .hero-actions { flex-direction: column; align-items: center; }
 
-  .stats { gap: 1.5rem; padding: 2rem 1rem; }
-  .stat-num { font-size: 1.8rem; }
+  .stats {   display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 1rem; }
+  .stat-num {   font-size: clamp(1.4rem, 4vw, 2rem);
+  white-space: nowrap; }
+   .stat {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
 
   .section { padding: 3.5rem 1.2rem; }
   .section-title { font-size: 1.7rem; }

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "./Navbar.css";
@@ -23,51 +24,128 @@ function DocuGuardLogo() {
 export default function Navbar() {
   const navigate = useNavigate();
   const { isAuthed, user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const role = String(user?.role ?? "user").trim().toLowerCase();
   const isAdmin = role === "admin";
 
+  // Close menu on route change or resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 680) setMenuOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [menuOpen]);
+
+  const closeMenu = () => setMenuOpen(false);
+
+  const handleNavigate = (path) => {
+    closeMenu();
+    navigate(path);
+  };
+
+  const handleLogout = () => {
+    closeMenu();
+    logout();
+    navigate("/");
+  };
+
   return (
-    <nav className="nav">
-      <a className="logo" href="/">
-        <DocuGuardLogo />
-        Docu<span>Guard</span>
-      </a>
+    <>
+      <nav className="nav">
+        <a className="logo" href="/">
+          <DocuGuardLogo />
+          Docu<span>Guard</span>
+        </a>
 
-      <div className="nav-links">
-        {/* <a href="#features" className="btn-ghost">Features</a> */}
-        <a href="#how-it-works" className="btn-ghost">How it works</a>
+        {/* Desktop links */}
+        <div className="nav-links">
+          <a href="#how-it-works" className="btn-ghost">How it works</a>
 
-        {!isAuthed ? (
-          <>
-            <button className="btn-ghost" onClick={() => navigate("/login")}>
-              Sign in
-            </button>
-            <button className="btn-primary" onClick={() => navigate("/register")}>
-              Create account
-            </button>
-          </>
-        ) : (
-          <>
-            <span className="nav-user" title={isAdmin ? "Admin account" : "User account"}>
-              <span className={`nav-role ${isAdmin ? "admin" : ""}`}>
-                {isAdmin ? "ADMIN" : "USER"}
+          {!isAuthed ? (
+            <>
+              <button className="btn-ghost" onClick={() => navigate("/login")}>
+                Sign in
+              </button>
+              <button className="btn-primary" onClick={() => navigate("/register")}>
+                Create account
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="nav-user" title={isAdmin ? "Admin account" : "User account"}>
+                <span className={`nav-role ${isAdmin ? "admin" : ""}`}>
+                  {isAdmin ? "ADMIN" : "USER"}
+                </span>
+                Hello <strong>{user?.name}</strong>
               </span>
-              Hello <strong>{user?.name}</strong>
-            </span>
+              <button
+                className={`btn-primary ${isAdmin ? "btn-admin" : ""}`}
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </>
+          )}
+        </div>
 
-            <button
-              className={`btn-primary ${isAdmin ? "btn-admin" : ""}`}
-              onClick={() => {
-                logout();
-                navigate("/");
-              }}
-            >
-              Logout
-            </button>
-          </>
-        )}
+        {/* Hamburger button — mobile only */}
+        <button
+          className={`hamburger ${menuOpen ? "open" : ""}`}
+          onClick={() => setMenuOpen((prev) => !prev)}
+          aria-label="Toggle menu"
+          aria-expanded={menuOpen}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+      </nav>
+
+      {/* Mobile drawer */}
+      <div className={`mobile-menu ${menuOpen ? "visible" : ""}`}>
+        <div className="mobile-menu-inner">
+          <a href="#how-it-works" className="mobile-link" onClick={closeMenu}>
+            How it works
+          </a>
+
+          {!isAuthed ? (
+            <>
+              <button className="btn-ghost mobile-btn" onClick={() => handleNavigate("/login")}>
+                Sign in
+              </button>
+              <button className="btn-primary mobile-btn" onClick={() => handleNavigate("/register")}>
+                Create account
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="mobile-user">
+                <span className={`nav-role ${isAdmin ? "admin" : ""}`}>
+                  {isAdmin ? "ADMIN" : "USER"}
+                </span>
+                Hello <strong>{user?.name}</strong>
+              </div>
+              <button
+                className={`btn-primary mobile-btn ${isAdmin ? "btn-admin" : ""}`}
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </>
+          )}
+        </div>
       </div>
-    </nav>
+
+      {/* Backdrop */}
+      {menuOpen && <div className="mobile-backdrop" onClick={closeMenu} />}
+    </>
   );
 }

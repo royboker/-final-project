@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
+/* ── Base nav ── */
 .nav {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -29,6 +30,7 @@
   color: var(--lime);
 }
 
+/* ── Desktop nav-links ── */
 .nav-links {
   display: flex;
   align-items: center;
@@ -71,45 +73,156 @@
 .btn-primary:hover {
   opacity: 0.88;
 }
-.nav-user{
-  display:inline-flex;
-  align-items:center;
-  gap:.45rem;
-  padding:.45rem 1rem;
-  border-radius:999px;
-  border:1px solid var(--border);
-  color:var(--text);
-  font-family:'DM Sans',sans-serif;
-  font-size:.875rem;
-  cursor:default;
+
+.nav-role {
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  padding: .18rem .55rem;
+  margin: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(163,230,53,.35);
+  color: var(--lime);
 }
 
-.nav-user strong{
-  color:var(--white);
-  font-weight:700;
-}
-
-.nav-role{
-  font-size:.75rem;
-  font-weight:800;
-  letter-spacing:.04em;
-  padding:.18rem .55rem;
-  border-radius:999px;
-  border:1px solid rgba(163,230,53,.35);
-  color:var(--lime);
-}
-
-.nav-role.admin{
+.nav-role.admin {
   border-color: rgba(239,68,68,.45);
-  color:#ef4444;
+  color: #ef4444;
 }
 
-/* admin logout button */
-.btn-admin{
-  background:#ef4444;
-  box-shadow:0 0 18px rgba(239,68,68,.25);
+.btn-admin {
+  background: #ef4444;
+  box-shadow: 0 0 18px rgba(239,68,68,.25);
 }
+
+/* ── Hamburger button ── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 101;
+  flex-shrink: 0;
+}
+
+.hamburger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--white);
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  transform-origin: center;
+}
+
+/* Animate to X when open */
+.hamburger.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.hamburger.open span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.hamburger.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ── Mobile drawer ── */
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 65px; /* navbar height */
+  left: 0; right: 0;
+  z-index: 99;
+  background: rgba(9, 9, 15, 0.97);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+  transform: translateY(-8px);
+  opacity: 0;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.mobile-menu.visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+
+.mobile-menu-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem 1.75rem;
+}
+
+.mobile-link {
+  color: var(--text);
+  text-decoration: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  transition: color 0.2s;
+}
+
+.mobile-link:hover {
+  color: var(--white);
+}
+
+.mobile-btn {
+  width: 100%;
+  padding: 0.75rem 1.2rem;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.mobile-user {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text);
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Backdrop ── */
+.mobile-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* ── Mobile breakpoint ── */
 @media (max-width: 680px) {
-  .nav { padding: 1rem 1.2rem; }
-  .nav-links .btn-ghost:not(:last-of-type) { display: none; }
+  .nav {
+    padding: 1rem 1.2rem;
+  }
+
+  /* Hide desktop links */
+  .nav-links {
+    display: none;
+  }
+
+  /* Show hamburger */
+  .hamburger {
+    display: flex;
+  }
+
+  /* Show drawer and backdrop */
+  .mobile-menu,
+  .mobile-backdrop {
+    display: block;
+  }
 }

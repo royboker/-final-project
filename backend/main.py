@@ -2,10 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.auth import router as auth_router
 from routes.scan import router as scan_router
+from starlette.middleware.sessions import SessionMiddleware
+import os
+
 
 app = FastAPI(title="DocuGuard API", version="1.0.0")
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("JWT_SECRET", "secret"))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
