@@ -10,6 +10,7 @@ from PIL import Image
 import io
 import os
 import random
+import base64
 
 from db.mongo import scans_collection
 from utils.model_loader import (
@@ -117,6 +118,13 @@ async def classify(
         result = predict(loaded_model, image, device=device)
         result["demo"] = False
 
+    # Create compressed thumbnail for storage
+    thumb = image.convert("RGB")
+    thumb.thumbnail((400, 400))
+    buf = io.BytesIO()
+    thumb.save(buf, format="JPEG", quality=65)
+    image_b64 = base64.b64encode(buf.getvalue()).decode()
+
     # Save scan to DB
     scan = {
         "user_id": user["id"],
@@ -125,6 +133,7 @@ async def classify(
         "doc_type": result["predicted"],
         "confidence": result["confidence"],
         "probabilities": result["probabilities"],
+        "image_data": image_b64,
         "scanned_at": datetime.utcnow(),
     }
     inserted = scans_collection.insert_one(scan)

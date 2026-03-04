@@ -257,6 +257,54 @@
 .profile-empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
 .profile-empty p { color: #52525b; font-size: 0.875rem; margin: 0; }
 
+.profile-scan-row.clickable { cursor: pointer; transition: background 0.15s; }
+.profile-scan-row.clickable:hover { background: rgba(163,230,53,0.06); }
+
+/* ── Scan Detail Modal ── */
+.scan-modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+.scan-modal {
+  background: #111118;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 2rem;
+  width: 100%; max-width: 460px;
+  position: relative;
+  display: flex; flex-direction: column; gap: 1.2rem;
+}
+.scan-modal-close {
+  position: absolute; top: 1rem; right: 1rem;
+  background: rgba(255,255,255,0.07); border: none;
+  color: #fff; border-radius: 50%;
+  width: 28px; height: 28px; cursor: pointer; font-size: 0.8rem;
+}
+.scan-modal-close:hover { background: rgba(255,255,255,0.14); }
+.scan-modal-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0; }
+.scan-modal-img {
+  width: 100%; border-radius: 10px;
+  object-fit: contain; max-height: 260px;
+  background: #1a1a24;
+}
+.scan-modal-no-img {
+  text-align: center; padding: 2rem;
+  color: #52525b; font-size: 0.85rem;
+  background: #1a1a24; border-radius: 10px;
+}
+.scan-modal-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+.scan-modal-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.scan-modal-item:last-child { border-bottom: none; }
+.scan-modal-lbl { font-size: 0.78rem; color: #52525b; }
+.scan-modal-val { font-size: 0.82rem; color: #e4e4f0; font-weight: 500; }
+
 /* ── Password form ── */
 .profile-pw-grid {
   display: grid;

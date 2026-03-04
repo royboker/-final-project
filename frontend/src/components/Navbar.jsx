@@ -31,6 +31,7 @@ export default function Navbar() {
 
   const role = String(user?.role ?? "user").trim().toLowerCase();
   const isAdmin = role === "admin";
+  
 
   useEffect(() => {
     const handleResize = () => { if (window.innerWidth > 680) setMenuOpen(false); };
@@ -58,7 +59,7 @@ export default function Navbar() {
   const handleNavigate = (path) => { closeMenu(); navigate(path); };
   const handleLogout = () => { closeMenu(); setDropdownOpen(false); logout(); navigate("/"); };
   const location = useLocation();
-const isProfile = location.pathname === "/profile";
+const showHomeBtn = location.pathname !== "/";
 
   return (
     <>
@@ -68,14 +69,15 @@ const isProfile = location.pathname === "/profile";
           Docu<span>Guard</span>
         </a>
 
-        <div className="nav-links">
-          {isProfile ? (
-  <button className="btn-ghost nav-back" onClick={() => navigate("/")}>
-     Home
-  </button>
-) : (
-  <a href="#how-it-works" className="btn-ghost">How it works</a>
-)}
+<div className="nav-links">
+  {showHomeBtn ? (
+    <button className="btn-ghost nav-back" onClick={() => navigate("/")}>
+      Home
+    </button>
+  ) : (
+    <a href="#how-it-works" className="btn-ghost">How it works</a>
+  )}
+
 
           {!isAuthed ? (
             <>
@@ -86,55 +88,49 @@ const isProfile = location.pathname === "/profile";
             <>
               <button className="btn-primary" onClick={() => navigate("/scan")}>Scan document</button>
               {/* Profile dropdown */}
-              <div className="nav-profile-wrap" ref={dropdownRef}>
-                <button
-                  className="nav-profile"
-                  onClick={() => setDropdownOpen(o => !o)}
-                >
+<div className="nav-profile-wrap" ref={dropdownRef}>
+  <button className="nav-profile" onClick={() => setDropdownOpen(o => !o)}>
+    <div className="nav-profile-info">
+      <span className={`nav-role ${isAdmin ? "admin" : ""}`}>
+        {isAdmin ? "ADMIN" : "USER"}
+      </span>
+      <span>{user?.name}</span>
+    </div>
 
-                  <div className="nav-profile-info">
-                    <span className={`nav-role ${isAdmin ? "admin" : ""}`}>
-                      {isAdmin ? "ADMIN" : "USER"}
-                    </span>
-                    <span>{user?.name}</span>
-                  </div>
-                  <svg className={`nav-chevron ${dropdownOpen ? "open" : ""}`} viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </button>
-
-                {dropdownOpen && (
-                  <div className="nav-dropdown">
-                    {/* Header */}
-<div className="nav-dropdown-header">
-  <div>
-    <div className="nav-dropdown-name">{user?.name}</div>
-    <div className="nav-dropdown-email">{user?.email}</div>
-  </div>
-</div>
-                    <div className="nav-dropdown-divider" />
-
-                    <button className="nav-dropdown-item" onClick={() => { setDropdownOpen(false); navigate("/profile"); }}>
-                      <ProfileIcon /> My Profile
-                    </button>
-
-{isAdmin && (
-  <button
-    className="nav-dropdown-item nav-dropdown-admin"
-    onClick={() => { setDropdownOpen(false); navigate("/admin"); }}
-  >
-    <DashboardIcon /> Admin Dashboard
+    <svg className={`nav-chevron ${dropdownOpen ? "open" : ""}`} viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
   </button>
-)}
 
-                    <div className="nav-dropdown-divider" />
+  {dropdownOpen && (
+    <div className="nav-dropdown">
+      <div className="nav-dropdown-header">
+        <div>
+          <div className="nav-dropdown-name">{user?.name}</div>
+          <div className="nav-dropdown-email">{user?.email}</div>
+        </div>
+      </div>
 
-                    <button className="nav-dropdown-item danger" onClick={handleLogout}>
-                      <LogoutIcon /> Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+      <div className="nav-dropdown-divider" />
+
+      <button className="nav-dropdown-item" onClick={() => { setDropdownOpen(false); navigate("/profile"); }}>
+        <ProfileIcon /> My Profile
+      </button>
+
+      {isAdmin && (
+        <button className="nav-dropdown-item nav-dropdown-admin" onClick={() => { setDropdownOpen(false); navigate("/admin"); }}>
+          <DashboardIcon /> Admin Dashboard
+        </button>
+      )}
+
+      <div className="nav-dropdown-divider" />
+
+      <button className="nav-dropdown-item danger" onClick={handleLogout}>
+        <LogoutIcon /> Logout
+      </button>
+    </div>
+  )}
+</div> 
             </>
           )}
         </div>

@@ -165,7 +165,7 @@ const isAuthed = Boolean(token);
 <div className="hero-actions">
   {isAuthed ? (
     <>
-      <a href="#upload" className="btn-primary-lg">Start scanning →</a>
+      <button className="btn-primary-lg" onClick={() => navigate("/scan")}>Start scanning →</button>
       <a href="#how-it-works" className="btn-ghost-lg">How it works</a>
     </>
   ) : (
@@ -202,35 +202,23 @@ const isAuthed = Boolean(token);
       </div>
 
 {isAuthed && (
-  <>
-    {/* UPLOAD ZONE */}
-    <section className="section" id="upload">
-      <h2 className="section-title">Scan a document now</h2>
-      <p className="section-sub">Upload a file and our AI will analyze it in seconds</p>
-
-      <div className="upload-zone" onClick={() => navigate("/register")}>
-        <div className="upload-icon">
-          <SvgIcon>
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-          </SvgIcon>
-        </div>
-
-        <h3>Drag & drop your file here</h3>
-        <p>Up to 100MB per file</p>
-
-        <div className="file-types">
-          {FILE_TYPES.map(t => <span className="tag" key={t}>{t}</span>)}
-        </div>
-
-        <button
-          className="btn-primary-lg"
-          onClick={e => { e.stopPropagation(); navigate("/register"); }}
-        >
-          Get started free
-        </button>
+  <section className="section" id="upload">
+    <div className="scan-cta-card">
+      <div className="scan-cta-icon">
+        <SvgIcon>
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+        </SvgIcon>
       </div>
-    </section>
-  </>
+      <h2 className="scan-cta-title">Ready to scan a document?</h2>
+      <p className="scan-cta-sub">Upload an ID, Passport, or Driver License and let our AI classify it in seconds.</p>
+      <div className="scan-cta-tags">
+        {FILE_TYPES.map(t => <span className="tag" key={t}>{t}</span>)}
+      </div>
+      <button className="btn-primary-lg" onClick={() => navigate("/scan")}>
+        Scan document →
+      </button>
+    </div>
+  </section>
 )}
 
       {/* FEATURES */}

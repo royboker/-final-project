@@ -317,6 +317,57 @@ body {
   margin-bottom: 3rem;
 }
 
+/* ── Scan CTA Card ────────────────────────────────────────────────────────── */
+.scan-cta-card {
+  max-width: 520px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid rgba(163, 230, 53, 0.2);
+  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.scan-cta-card:hover {
+  border-color: rgba(163, 230, 53, 0.5);
+  box-shadow: 0 0 40px rgba(163, 230, 53, 0.08);
+}
+
+.scan-cta-icon {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  color: var(--lime);
+}
+
+.scan-cta-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -0.5px;
+}
+
+.scan-cta-sub {
+  color: var(--muted);
+  font-size: 0.95rem;
+  max-width: 360px;
+}
+
+.scan-cta-tags {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 /* ── Upload Zone ──────────────────────────────────────────────────────────── */
 .upload-zone {
   border: 2px dashed rgba(13, 185, 33, 0.35);

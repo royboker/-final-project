@@ -12,6 +12,7 @@ export default function UserProfile() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [selectedScan, setSelectedScan] = useState(null);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [pwData, setPwData] = useState({ current: "", next: "", confirm: "" });
   const [pwLoading, setPwLoading] = useState(false);
@@ -89,6 +90,7 @@ export default function UserProfile() {
   return (
     <>
       <Navbar />
+      <ScanDetailModal scan={selectedScan} onClose={() => setSelectedScan(null)} />
       <div className="profile-page">
         <div className="profile-glow" />
 
@@ -194,17 +196,13 @@ export default function UserProfile() {
               ) : (
                 <div className="profile-scans-list">
                   {scans.map((s, i) => (
-                    <div className="profile-scan-row" key={i}>
-                      <div className="profile-scan-icon">
-                        {s.verdict === "forged" ? "⚠" : "✓"}
-                      </div>
+                    <div className="profile-scan-row clickable" key={i} onClick={() => setSelectedScan(s)}>
+                      <div className="profile-scan-icon">✓</div>
                       <div className="profile-scan-info">
                         <div className="profile-scan-name">{s.file_name}</div>
                         <div className="profile-scan-date">{new Date(s.scanned_at).toLocaleDateString("en-GB")}</div>
                       </div>
-                      <span className={`profile-verdict ${s.verdict}`}>
-                        {s.verdict === "forged" ? "Forged" : "Authentic"}
-                      </span>
+                      <span className="profile-verdict">{s.doc_type || "—"}</span>
                     </div>
                   ))}
                 </div>
@@ -282,6 +280,52 @@ export default function UserProfile() {
         </div>
       </div>
     </>
+  );
+}
+
+function ScanDetailModal({ scan, onClose }) {
+  if (!scan) return null;
+  const conf = scan.confidence ? `${(scan.confidence * 100).toFixed(1)}%` : "—";
+  return (
+    <div className="scan-modal-overlay" onClick={onClose}>
+      <div className="scan-modal" onClick={e => e.stopPropagation()}>
+        <button className="scan-modal-close" onClick={onClose}>✕</button>
+        <h2 className="scan-modal-title">Scan Details</h2>
+
+        {scan.image_data ? (
+          <img
+            src={`data:image/jpeg;base64,${scan.image_data}`}
+            alt={scan.file_name}
+            className="scan-modal-img"
+          />
+        ) : (
+          <div className="scan-modal-no-img">No image stored</div>
+        )}
+
+        <div className="scan-modal-grid">
+          <div className="scan-modal-item">
+            <span className="scan-modal-lbl">File</span>
+            <span className="scan-modal-val">{scan.file_name}</span>
+          </div>
+          <div className="scan-modal-item">
+            <span className="scan-modal-lbl">Document type</span>
+            <span className="scan-modal-val">{scan.doc_type || "—"}</span>
+          </div>
+          <div className="scan-modal-item">
+            <span className="scan-modal-lbl">Model</span>
+            <span className="scan-modal-val">{scan.model_used}</span>
+          </div>
+          <div className="scan-modal-item">
+            <span className="scan-modal-lbl">Confidence</span>
+            <span className="scan-modal-val">{conf}</span>
+          </div>
+          <div className="scan-modal-item">
+            <span className="scan-modal-lbl">Date</span>
+            <span className="scan-modal-val">{new Date(scan.scanned_at).toLocaleDateString("en-GB")}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
