@@ -72,6 +72,9 @@ results/models/
 results/logs/
 results/checkpoints/
 
+# Notebooks
+notebooks/
+
 # Keep only small files
 !datasets/README.md
 !datasets/examples/README.md

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useLocation } from "react-router-dom";
 import "./Navbar.css";
 
 function DocuGuardLogo() {
@@ -56,6 +57,8 @@ export default function Navbar() {
   const closeMenu = () => setMenuOpen(false);
   const handleNavigate = (path) => { closeMenu(); navigate(path); };
   const handleLogout = () => { closeMenu(); setDropdownOpen(false); logout(); navigate("/"); };
+  const location = useLocation();
+const isProfile = location.pathname === "/profile";
 
   return (
     <>
@@ -66,7 +69,13 @@ export default function Navbar() {
         </a>
 
         <div className="nav-links">
-          <a href="#how-it-works" className="btn-ghost">How it works</a>
+          {isProfile ? (
+  <button className="btn-ghost nav-back" onClick={() => navigate("/")}>
+     Home
+  </button>
+) : (
+  <a href="#how-it-works" className="btn-ghost">How it works</a>
+)}
 
           {!isAuthed ? (
             <>
@@ -75,6 +84,7 @@ export default function Navbar() {
             </>
           ) : (
             <>
+              <button className="btn-primary" onClick={() => navigate("/scan")}>Scan document</button>
               {/* Profile dropdown */}
               <div className="nav-profile-wrap" ref={dropdownRef}>
                 <button
@@ -151,6 +161,7 @@ export default function Navbar() {
             </>
           ) : (
             <>
+              <button className="btn-primary mobile-btn" onClick={() => handleNavigate("/scan")}>Scan document</button>
               <button className="nav-profile mobile-btn" onClick={() => handleNavigate("/profile")}>
 
                 <div className="nav-profile-info">

@@ -1,11 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Header
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 
 from dotenv import load_dotenv
 import os
-
-# SMRT
 
 import secrets
 from utils.email import send_verification_email, send_reset_email
@@ -15,6 +13,7 @@ from argon2.exceptions import VerifyMismatchError, InvalidHash
 
 from db.mongo import users_collection
 from models.user import UserRegister, UserLogin
+from bson import ObjectId
 
 # google
 from authlib.integrations.starlette_client import OAuth
@@ -22,7 +21,6 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 load_dotenv()
-
 
 oauth = OAuth()
 oauth.register(
@@ -34,22 +32,19 @@ oauth.register(
 )
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
-
-
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 JWT_SECRET = os.getenv("JWT_SECRET", "secret")
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_HOURS = 24 * 7  # 7 days
 
-ph = PasswordHasher()  # Argon2 defaults are OK for most projects
+ph = PasswordHasher()
 
 def normalize_email(email: str) -> str:
     return email.strip().lower()
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def hash_password(password: str) -> str:
-    # אין מגבלת 72 כמו bcrypt, אבל עדיין טוב להגביל כדי למנוע abuse
     if len(password) < 8:
         raise HTTPException(status_code=400, detail="Password too short (min 8 chars)")
     if len(password) > 256:
@@ -66,6 +61,14 @@ def create_token(user_id: str, email: str, role: str) -> str:
     expire = datetime.utcnow() + timedelta(hours=TOKEN_EXPIRE_HOURS)
     payload = {"sub": user_id, "email": email, "role": role, "exp": expire}
     return jwt.encode(payload, JWT_SECRET, algorithm=ALGORITHM)
+
+def get_current_user_from_token(authorization: str = Header(...)):
+    try:
+        token = authorization.replace("Bearer ", "")
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
+        return payload
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 # ── Register ──────────────────────────────────────────────────────────────────
 @router.post("/register", status_code=201)
@@ -97,8 +100,7 @@ def register(data: UserRegister):
         "user_id": user_id,
     }
 
-# ── google ─────────────────────────────────────────────────────────────────────
-
+# ── Google OAuth ──────────────────────────────────────────────────────────────
 @router.get("/google")
 async def google_login(request: Request):
     redirect_uri = request.url_for("google_callback")
@@ -137,6 +139,7 @@ async def google_callback(request: Request):
     return RedirectResponse(
         url=f"{FRONTEND_URL}/auth/callback?token={jwt_token}&name={name}&email={email}&role={role}&id={user_id}"
     )
+
 # ── Login ─────────────────────────────────────────────────────────────────────
 @router.post("/login")
 def login(data: UserLogin):
@@ -152,7 +155,6 @@ def login(data: UserLogin):
     if not user.get("is_verified", False):
         raise HTTPException(status_code=403, detail="Please verify your email first")
 
-    # ── עדכון last_login ──
     users_collection.update_one(
         {"_id": user["_id"]},
         {"$set": {"last_login": datetime.utcnow()}}
@@ -172,6 +174,7 @@ def login(data: UserLogin):
         },
     }
 
+# ── Verify Email ──────────────────────────────────────────────────────────────
 @router.get("/verify-email")
 def verify_email(token: str):
     user = users_collection.find_one({"verify_token": token})
@@ -197,6 +200,8 @@ def verify_email(token: str):
             "role": user.get("role", "user"),
         },
     }
+
+# ── Forgot Password ───────────────────────────────────────────────────────────
 @router.post("/forgot-password")
 def forgot_password(data: dict):
     email = normalize_email(data.get("email", ""))
@@ -216,7 +221,7 @@ def forgot_password(data: dict):
     send_reset_email(email, reset_token, user.get("name", ""))
     return {"message": "If this email exists, a reset link has been sent"}
 
-
+# ── Reset Password ────────────────────────────────────────────────────────────
 @router.post("/reset-password")
 def reset_password(data: dict):
     token = data.get("token", "")
@@ -240,5 +245,44 @@ def reset_password(data: dict):
 
     return {"message": "Password reset successfully"}
 
-    
-    
+# ── Get My Profile ────────────────────────────────────────────────────────────
+@router.get("/me")
+def get_me(authorization: str = Header(...)):
+    user_data = get_current_user_from_token(authorization)
+    user = users_collection.find_one({"_id": ObjectId(user_data["sub"])})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        "id": str(user["_id"]),
+        "name": user.get("name"),
+        "email": user.get("email"),
+        "role": user.get("role", "user"),
+        "created_at": user.get("created_at"),
+        "last_login": user.get("last_login"),
+        "auth_method": "google" if user.get("google_id") else "email",
+        "is_verified": user.get("is_verified", False),
+    }
+
+# ── Change Password ───────────────────────────────────────────────────────────
+@router.patch("/me/password")
+def change_password(data: dict, authorization: str = Header(...)):
+    user_data = get_current_user_from_token(authorization)
+    user = users_collection.find_one({"_id": ObjectId(user_data["sub"])})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.get("google_id"):
+        raise HTTPException(status_code=400, detail="Google accounts cannot change password")
+    if not verify_password(data.get("current_password", ""), user["password"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    users_collection.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"password": hash_password(data.get("new_password", ""))}}
+    )
+    return {"message": "Password changed successfully"}
+
+# ── Delete Account ────────────────────────────────────────────────────────────
+@router.delete("/me")
+def delete_me(authorization: str = Header(...)):
+    user_data = get_current_user_from_token(authorization)
+    users_collection.delete_one({"_id": ObjectId(user_data["sub"])})
+    return {"message": "Account deleted"}

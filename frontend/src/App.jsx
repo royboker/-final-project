@@ -9,14 +9,19 @@ import CheckEmail from "./pages/CheckEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
+import UserProfile from "./pages/UserProfile";
+import ScanPage from "./pages/ScanPage";
 
 function AdminRoute({ children }) {
   const { isAuthed, user } = useAuth();
   const role = String(user?.role ?? "user").trim().toLowerCase();
+  if (!isAuthed || role !== "admin") return <Navigate to="/" replace />;
+  return children;
+}
 
-  if (!isAuthed || role !== "admin") {
-    return <Navigate to="/" replace />;
-  }
+function PrivateRoute({ children }) {
+  const { isAuthed } = useAuth();
+  if (!isAuthed) return <Navigate to="/login" replace />;
   return children;
 }
 
@@ -32,6 +37,16 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/scan" element={
+          <PrivateRoute>
+            <ScanPage />
+          </PrivateRoute>
+        } />
+        <Route path="/profile" element={
+          <PrivateRoute>
+            <UserProfile />
+          </PrivateRoute>
+        } />
         <Route path="/admin" element={
           <AdminRoute>
             <AdminDashboard />
