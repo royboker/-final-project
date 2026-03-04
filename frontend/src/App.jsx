@@ -1,12 +1,24 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 import LandingPage from "./pages/LandingPage";
-import Login    from "./pages/Login";
+import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AuthCallback from "./pages/AuthCallback";
 import VerifyEmail from "./pages/VerifyEmail";
 import CheckEmail from "./pages/CheckEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import AdminDashboard from "./pages/AdminDashboard";
+
+function AdminRoute({ children }) {
+  const { isAuthed, user } = useAuth();
+  const role = String(user?.role ?? "user").trim().toLowerCase();
+
+  if (!isAuthed || role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
 
 export default function App() {
   return (
@@ -19,7 +31,12 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-<Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/admin" element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        } />
       </Routes>
     </BrowserRouter>
   );

@@ -152,6 +152,12 @@ def login(data: UserLogin):
     if not user.get("is_verified", False):
         raise HTTPException(status_code=403, detail="Please verify your email first")
 
+    # ── עדכון last_login ──
+    users_collection.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"last_login": datetime.utcnow()}}
+    )
+
     user_id = str(user["_id"])
     token = create_token(user_id, user["email"], user.get("role", "user"))
 
@@ -165,7 +171,6 @@ def login(data: UserLogin):
             "role": user.get("role", "user"),
         },
     }
-
 
 @router.get("/verify-email")
 def verify_email(token: str):

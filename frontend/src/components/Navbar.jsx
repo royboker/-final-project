@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "./Navbar.css";
@@ -25,37 +25,37 @@ export default function Navbar() {
   const navigate = useNavigate();
   const { isAuthed, user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const role = String(user?.role ?? "user").trim().toLowerCase();
   const isAdmin = role === "admin";
 
-  // Close menu on route change or resize
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 680) setMenuOpen(false);
-    };
+    const handleResize = () => { if (window.innerWidth > 680) setMenuOpen(false); };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Prevent body scroll when menu is open
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [menuOpen]);
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   const closeMenu = () => setMenuOpen(false);
-
-  const handleNavigate = (path) => {
-    closeMenu();
-    navigate(path);
-  };
-
-  const handleLogout = () => {
-    closeMenu();
-    logout();
-    navigate("/");
-  };
+  const handleNavigate = (path) => { closeMenu(); navigate(path); };
+  const handleLogout = () => { closeMenu(); setDropdownOpen(false); logout(); navigate("/"); };
 
   return (
     <>
@@ -65,87 +65,123 @@ export default function Navbar() {
           Docu<span>Guard</span>
         </a>
 
-        {/* Desktop links */}
         <div className="nav-links">
           <a href="#how-it-works" className="btn-ghost">How it works</a>
 
           {!isAuthed ? (
             <>
-              <button className="btn-ghost" onClick={() => navigate("/login")}>
-                Sign in
-              </button>
-              <button className="btn-primary" onClick={() => navigate("/register")}>
-                Create account
-              </button>
+              <button className="btn-ghost" onClick={() => navigate("/login")}>Sign in</button>
+              <button className="btn-primary" onClick={() => navigate("/register")}>Create account</button>
             </>
           ) : (
             <>
-              <span className="nav-user" title={isAdmin ? "Admin account" : "User account"}>
-                <span className={`nav-role ${isAdmin ? "admin" : ""}`}>
-                  {isAdmin ? "ADMIN" : "USER"}
-                </span>
-                Hello <strong>{user?.name}</strong>
-              </span>
-              <button
-                className={`btn-primary ${isAdmin ? "btn-admin" : ""}`}
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
+              {/* Profile dropdown */}
+              <div className="nav-profile-wrap" ref={dropdownRef}>
+                <button
+                  className="nav-profile"
+                  onClick={() => setDropdownOpen(o => !o)}
+                >
+
+                  <div className="nav-profile-info">
+                    <span className={`nav-role ${isAdmin ? "admin" : ""}`}>
+                      {isAdmin ? "ADMIN" : "USER"}
+                    </span>
+                    <span>{user?.name}</span>
+                  </div>
+                  <svg className={`nav-chevron ${dropdownOpen ? "open" : ""}`} viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+
+                {dropdownOpen && (
+                  <div className="nav-dropdown">
+                    {/* Header */}
+<div className="nav-dropdown-header">
+  <div>
+    <div className="nav-dropdown-name">{user?.name}</div>
+    <div className="nav-dropdown-email">{user?.email}</div>
+  </div>
+</div>
+                    <div className="nav-dropdown-divider" />
+
+                    <button className="nav-dropdown-item" onClick={() => { setDropdownOpen(false); navigate("/profile"); }}>
+                      <ProfileIcon /> My Profile
+                    </button>
+
+{isAdmin && (
+  <button
+    className="nav-dropdown-item nav-dropdown-admin"
+    onClick={() => { setDropdownOpen(false); navigate("/admin"); }}
+  >
+    <DashboardIcon /> Admin Dashboard
+  </button>
+)}
+
+                    <div className="nav-dropdown-divider" />
+
+                    <button className="nav-dropdown-item danger" onClick={handleLogout}>
+                      <LogoutIcon /> Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
 
-        {/* Hamburger button — mobile only */}
         <button
           className={`hamburger ${menuOpen ? "open" : ""}`}
-          onClick={() => setMenuOpen((prev) => !prev)}
+          onClick={() => setMenuOpen(prev => !prev)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
         >
-          <span />
-          <span />
-          <span />
+          <span /><span /><span />
         </button>
       </nav>
 
       {/* Mobile drawer */}
       <div className={`mobile-menu ${menuOpen ? "visible" : ""}`}>
         <div className="mobile-menu-inner">
-          <a href="#how-it-works" className="mobile-link" onClick={closeMenu}>
-            How it works
-          </a>
+          <a href="#how-it-works" className="mobile-link" onClick={closeMenu}>How it works</a>
 
           {!isAuthed ? (
             <>
-              <button className="btn-ghost mobile-btn" onClick={() => handleNavigate("/login")}>
-                Sign in
-              </button>
-              <button className="btn-primary mobile-btn" onClick={() => handleNavigate("/register")}>
-                Create account
-              </button>
+              <button className="btn-ghost mobile-btn" onClick={() => handleNavigate("/login")}>Sign in</button>
+              <button className="btn-primary mobile-btn" onClick={() => handleNavigate("/register")}>Create account</button>
             </>
           ) : (
             <>
-              <div className="mobile-user">
-                <span className={`nav-role ${isAdmin ? "admin" : ""}`}>
-                  {isAdmin ? "ADMIN" : "USER"}
-                </span>
-                Hello <strong>{user?.name}</strong>
-              </div>
-              <button
-                className={`btn-primary mobile-btn ${isAdmin ? "btn-admin" : ""}`}
-                onClick={handleLogout}
-              >
-                Logout
+              <button className="nav-profile mobile-btn" onClick={() => handleNavigate("/profile")}>
+
+                <div className="nav-profile-info">
+                  <span className={`nav-role ${isAdmin ? "admin" : ""}`}>
+                    {isAdmin ? "ADMIN" : "USER"}
+                  </span>
+                  <span>{user?.name}</span>
+                </div>
               </button>
+              {isAdmin && (
+                <button className="btn-primary mobile-btn btn-admin" onClick={() => handleNavigate("/admin")}>
+                  Dashboard
+                </button>
+              )}
+              <button className="btn-ghost mobile-btn" onClick={handleLogout}>Logout</button>
             </>
           )}
         </div>
       </div>
 
-      {/* Backdrop */}
       {menuOpen && <div className="mobile-backdrop" onClick={closeMenu} />}
     </>
   );
+}
+
+function ProfileIcon() {
+  return <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+}
+function DashboardIcon() {
+  return <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>;
+}
+function LogoutIcon() {
+  return <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
 }
