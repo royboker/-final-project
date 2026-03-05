@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Header
+from fastapi import APIRouter, HTTPException, status, Header, BackgroundTasks
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 
@@ -71,7 +71,7 @@ def get_current_user_from_token(authorization: str = Header(...)):
 
 # ── Register ──────────────────────────────────────────────────────────────────
 @router.post("/register", status_code=201)
-def register(data: UserRegister):
+def register(data: UserRegister, background_tasks: BackgroundTasks):
     email = normalize_email(data.email)
 
     if users_collection.find_one({"email": email}):
@@ -92,7 +92,8 @@ def register(data: UserRegister):
     result = users_collection.insert_one(user)
     user_id = str(result.inserted_id)
 
-    send_verification_email(email, verify_token, data.name.strip())
+    # Send email in background - don't wait!
+    background_tasks.add_task(send_verification_email, email, verify_token, data.name.strip())
 
     return {
         "message": "Check your email to verify your account",
@@ -200,9 +201,34 @@ def verify_email(token: str):
         },
     }
 
+# ── Resend Verification Email ────────────────────────────────────────────────
+@router.post("/resend-verification")
+def resend_verification(data: dict):
+    email = normalize_email(data.get("email", ""))
+    user = users_collection.find_one({"email": email})
+
+    if not user:
+        # Don't reveal if user exists
+        return {"message": "If this email exists and is unverified, a verification email has been sent"}
+
+    if user.get("is_verified", False):
+        raise HTTPException(status_code=400, detail="Email is already verified")
+
+    # Generate new token
+    verify_token = secrets.token_urlsafe(32)
+    users_collection.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"verify_token": verify_token}}
+    )
+
+    # Try to send email
+    send_verification_email(email, verify_token, user.get("name", ""))
+
+    return {"message": "Verification email sent. Please check your inbox"}
+
 # ── Forgot Password ───────────────────────────────────────────────────────────
 @router.post("/forgot-password")
-def forgot_password(data: dict):
+def forgot_password(data: dict, background_tasks: BackgroundTasks):
     email = normalize_email(data.get("email", ""))
     user = users_collection.find_one({"email": email})
 
@@ -217,7 +243,8 @@ def forgot_password(data: dict):
         {"$set": {"reset_token": reset_token, "reset_expires": reset_expires}}
     )
 
-    send_reset_email(email, reset_token, user.get("name", ""))
+    # Send email in background - don't wait!
+    background_tasks.add_task(send_reset_email, email, reset_token, user.get("name", ""))
     return {"message": "If this email exists, a reset link has been sent"}
 
 # ── Reset Password ────────────────────────────────────────────────────────────
