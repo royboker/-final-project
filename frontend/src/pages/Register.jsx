@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
+import { API_URL } from "../config";
 import "./Login.css";
 import "./Register.css";
 
@@ -86,7 +87,7 @@ export default function Register() {
           <button
             type="button"
             className="auth-google"
-            onClick={() => window.location.href = "http://localhost:8000/auth/google"}
+            onClick={() => window.location.href = `${API_URL}/auth/google`}
           >
             <GoogleIcon />
             Continue with Google

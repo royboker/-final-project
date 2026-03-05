@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "./Login.css";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
+import { API_URL } from "../config";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -72,7 +73,7 @@ export default function Login() {
           <button
             type="button"
             className="auth-google"
-            onClick={() => window.location.href = "http://localhost:8000/auth/google"}
+            onClick={() => window.location.href = `${API_URL}/auth/google`}
           >
             <GoogleIcon />
             Continue with Google
