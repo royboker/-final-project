@@ -39,13 +39,15 @@ def send_reset_email(to_email: str, token: str, name: str):
     msg.attach(MIMEText(html, "html"))
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
             server.login(MAIL_USER, MAIL_PASSWORD)
             server.sendmail(MAIL_USER, to_email, msg.as_string())
         print(f"✅ Reset email sent to {to_email}")
+        return True
     except Exception as e:
         print(f"❌ Failed to send reset email: {e}")
-        raise
+        # Don't raise - let request complete even if email fails
+        return False
 
         
 def send_verification_email(to_email: str, token: str, name: str):
@@ -77,10 +79,12 @@ def send_verification_email(to_email: str, token: str, name: str):
     msg.attach(MIMEText(html, "html"))
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
             server.login(MAIL_USER, MAIL_PASSWORD)
             server.sendmail(MAIL_USER, to_email, msg.as_string())
         print(f"✅ Verification email sent to {to_email}")
+        return True
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
-        raise
+        # Don't raise - let user register even if email fails
+        return False
