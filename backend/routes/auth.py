@@ -11,7 +11,7 @@ from utils.email import send_verification_email, send_reset_email
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, InvalidHash
 
-from db.mongo import users_collection
+from db.mongo import users_collection, db
 from models.user import UserRegister, UserLogin
 from bson import ObjectId
 
@@ -284,5 +284,7 @@ def change_password(data: dict, authorization: str = Header(...)):
 @router.delete("/me")
 def delete_me(authorization: str = Header(...)):
     user_data = get_current_user_from_token(authorization)
-    users_collection.delete_one({"_id": ObjectId(user_data["sub"])})
+    user_id = user_data["sub"]
+    users_collection.delete_one({"_id": ObjectId(user_id)})
+    db["scans"].delete_many({"user_id": user_id})
     return {"message": "Account deleted"}

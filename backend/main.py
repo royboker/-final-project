@@ -4,6 +4,7 @@ from routes.auth import router as auth_router
 from routes.scan import router as scan_router
 from starlette.middleware.sessions import SessionMiddleware
 from routes.admin import router as admin_router
+from routes.chat import router as chat_router
 import os
 
 
@@ -24,6 +25,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(scan_router)
 app.include_router(admin_router)
+app.include_router(chat_router)
 
 # ── Health check ──────────────────────────────────────────────────────────────
 @app.get("/")

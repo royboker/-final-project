@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useChat } from "../context/ChatContext";
 import { useLocation } from "react-router-dom";
 import "./Navbar.css";
 
@@ -25,12 +26,14 @@ function DocuGuardLogo() {
 export default function Navbar() {
   const navigate = useNavigate();
   const { isAuthed, user, logout } = useAuth();
+  const { unread, adminUnread } = useChat();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const role = String(user?.role ?? "user").trim().toLowerCase();
   const isAdmin = role === "admin";
+  const msgBadge = isAdmin ? adminUnread : unread;
   
 
   useEffect(() => {
@@ -87,6 +90,17 @@ const showHomeBtn = location.pathname !== "/";
           ) : (
             <>
               <button className="btn-primary" onClick={() => navigate("/scan")}>Scan document</button>
+              {/* Chat notification badge */}
+              {msgBadge > 0 && (
+                <button
+                  className="nav-chat-notif"
+                  onClick={() => isAdmin ? navigate("/admin") : undefined}
+                  title={isAdmin ? "Unread messages from users" : "New messages from support"}
+                >
+                  <NavChatIcon />
+                  <span className="nav-chat-badge">{msgBadge > 9 ? "9+" : msgBadge}</span>
+                </button>
+              )}
               {/* Profile dropdown */}
 <div className="nav-profile-wrap" ref={dropdownRef}>
   <button className="nav-profile" onClick={() => setDropdownOpen(o => !o)}>
@@ -183,6 +197,9 @@ const showHomeBtn = location.pathname !== "/";
   );
 }
 
+function NavChatIcon() {
+  return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
+}
 function ProfileIcon() {
   return <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
 }

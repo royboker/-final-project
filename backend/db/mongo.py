@@ -17,6 +17,8 @@ db = client["docuguard"]
 
 users_collection = db["users"]
 scans_collection = db["scans"]
+chat_sessions_collection = db["chat_sessions"]
+chat_messages_collection = db["chat_messages"]
 
 # בדיקה אמיתית של החיבור
 client.admin.command("ping")

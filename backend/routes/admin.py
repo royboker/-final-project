@@ -109,6 +109,10 @@ def delete_user(user_id: str, authorization: str = Header(...)):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # Delete all scans belonging to this user
+    scans_collection = db["scans"]
+    scans_collection.delete_many({"user_id": user_id})
+
     return {"message": "User deleted successfully"}
 
 # ── Change role ───────────────────────────────────────────────────────────────

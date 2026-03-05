@@ -87,6 +87,21 @@ export default function ScanPage() {
     }
   };
 
+  // ── Download PDF Report ─────────────────────────────────────────────────────
+  const downloadReport = async (scanId) => {
+    const res = await fetch(`${API_URL}/scans/${scanId}/report`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `docuguard-report-${scanId.slice(0, 8)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // ── Reset ────────────────────────────────────────────────────────────────────
   const reset = () => {
     setFile(null);
@@ -306,9 +321,16 @@ export default function ScanPage() {
                   ))}
                 </div>
 
-                <button className="scan-again-btn" onClick={reset}>
-                  ↩ Scan another document
-                </button>
+                <div className="scan-actions">
+                  {result.scan_id && (
+                    <button className="scan-download-btn" onClick={() => downloadReport(result.scan_id)}>
+                      ↓ Download Report
+                    </button>
+                  )}
+                  <button className="scan-again-btn" onClick={reset}>
+                    ↩ Scan another document
+                  </button>
+                </div>
               </div>
             )}
           </div>

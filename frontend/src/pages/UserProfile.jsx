@@ -5,6 +5,8 @@ import { profileApi, api } from "../lib/api";
 import Navbar from "../components/Navbar";
 import "./UserProfile.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+
 export default function UserProfile() {
   const navigate = useNavigate();
   const { user, token, logout } = useAuth();
@@ -19,6 +21,7 @@ export default function UserProfile() {
   const [pwError, setPwError] = useState("");
   const [pwSuccess, setPwSuccess] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null); // { type: 'single', id } | { type: 'all' }
 
   useEffect(() => {
     async function load() {
@@ -53,6 +56,37 @@ export default function UserProfile() {
       setPwError(err.message);
     } finally {
       setPwLoading(false);
+    }
+  }
+
+  async function downloadReport(scanId) {
+    const res = await fetch(`${API_URL}/scans/${scanId}/report`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `docuguard-report-${scanId.slice(0, 8)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleDeleteScan() {
+    if (!confirmDelete) return;
+    try {
+      if (confirmDelete.type === "single") {
+        await api.deleteScan(token, confirmDelete.id);
+        setScans(prev => prev.filter(s => s.id !== confirmDelete.id));
+      } else {
+        await api.deleteAllScans(token);
+        setScans([]);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setConfirmDelete(null);
     }
   }
 
@@ -91,6 +125,24 @@ export default function UserProfile() {
     <>
       <Navbar />
       <ScanDetailModal scan={selectedScan} onClose={() => setSelectedScan(null)} />
+
+      {/* ── Delete Confirm Modal ── */}
+      {confirmDelete && (
+        <div className="scan-modal-overlay" onClick={() => setConfirmDelete(null)}>
+          <div className="scan-modal" style={{ maxWidth: 360 }} onClick={e => e.stopPropagation()}>
+            <h2 className="scan-modal-title">Are you sure?</h2>
+            <p style={{ fontSize: "0.875rem", color: "#a1a1aa", margin: 0 }}>
+              {confirmDelete.type === "all"
+                ? "This will permanently delete all your scans."
+                : "This will permanently delete this scan."}
+            </p>
+            <div className="profile-pw-actions" style={{ marginTop: "1rem" }}>
+              <button className="profile-btn-danger" onClick={handleDeleteScan}>Yes, delete</button>
+              <button className="profile-btn-ghost" onClick={() => setConfirmDelete(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="profile-page">
         <div className="profile-glow" />
 
@@ -185,8 +237,19 @@ export default function UserProfile() {
 
             {/* Recent scans */}
             <div className="profile-card">
-              <div className="profile-card-title">
-                <ScanIcon /> Recent Scans
+              <div className="profile-card-title" style={{ justifyContent: "space-between" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <ScanIcon /> Recent Scans
+                </span>
+                {scans.length > 0 && (
+                  <button
+                    className="profile-btn-danger"
+                    style={{ fontSize: "0.7rem", padding: "0.25rem 0.6rem" }}
+                    onClick={() => setConfirmDelete({ type: "all" })}
+                  >
+                    Clear All
+                  </button>
+                )}
               </div>
               {scans.length === 0 ? (
                 <div className="profile-empty">
@@ -203,6 +266,16 @@ export default function UserProfile() {
                         <div className="profile-scan-date">{new Date(s.scanned_at).toLocaleDateString("en-GB")}</div>
                       </div>
                       <span className="profile-verdict">{s.doc_type || "—"}</span>
+                      <button
+                        className="profile-scan-download-btn"
+                        onClick={e => { e.stopPropagation(); downloadReport(s.id); }}
+                        title="Download PDF report"
+                      >↓</button>
+                      <button
+                        className="profile-scan-delete-btn"
+                        onClick={e => { e.stopPropagation(); setConfirmDelete({ type: "single", id: s.id }); }}
+                        title="Delete scan"
+                      >🗑</button>
                     </div>
                   ))}
                 </div>

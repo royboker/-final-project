@@ -11,6 +11,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserProfile from "./pages/UserProfile";
 import ScanPage from "./pages/ScanPage";
+import ChatWidget from "./components/ChatWidget";
 
 function AdminRoute({ children }) {
   const { isAuthed, user } = useAuth();
@@ -28,6 +29,7 @@ function PrivateRoute({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <ChatWidget />
       <Routes>
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/verify-email" element={<VerifyEmail />} />

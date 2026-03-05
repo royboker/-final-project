@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from datetime import datetime
 from jose import jwt, JWTError
@@ -7,6 +8,10 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from pathlib import Path
 from PIL import Image
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.utils import ImageReader
+from reportlab.lib import colors
 import io
 import os
 import random
@@ -144,6 +149,7 @@ async def classify(
         "confidence": result["confidence"],
         "probabilities": result["probabilities"],
         "model_used": model,
+        "demo": result.get("demo", False),
     }
 
 # ── Request model ─────────────────────────────────────────────────────────────
@@ -209,3 +215,154 @@ def get_scan(scan_id: str, user = Depends(get_current_user)):
 
     scan["id"] = str(scan.pop("_id"))
     return scan
+
+# ── PDF Report ───────────────────────────────────────────────────────────────
+@router.get("/{scan_id}/report")
+def download_report(scan_id: str, user=Depends(get_current_user)):
+    try:
+        oid = ObjectId(scan_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid scan ID")
+
+    scan = scans_collection.find_one({"_id": oid})
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    if scan["user_id"] != user["id"] and user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    W, H = A4
+
+    # ── Background ──────────────────────────────────────────────────────────
+    c.setFillColor(colors.HexColor("#09090f"))
+    c.rect(0, 0, W, H, fill=1, stroke=0)
+
+    # ── Header bar ──────────────────────────────────────────────────────────
+    c.setFillColor(colors.HexColor("#a3e635"))
+    c.rect(0, H - 60, W, 60, fill=1, stroke=0)
+    c.setFillColor(colors.HexColor("#09090f"))
+    c.setFont("Helvetica-Bold", 22)
+    c.drawString(36, H - 40, "DocuGuard")
+    c.setFont("Helvetica", 11)
+    c.drawString(145, H - 40, "— Scan Report")
+
+    # ── Result badge ────────────────────────────────────────────────────────
+    conf = scan.get("confidence", 0)
+    conf_pct = round(conf * 100)
+    badge_color = "#a3e635" if conf_pct >= 70 else "#fb923c" if conf_pct >= 45 else "#f87171"
+    c.setFillColor(colors.HexColor(badge_color))
+    c.roundRect(W - 140, H - 52, 110, 32, 8, fill=1, stroke=0)
+    c.setFillColor(colors.HexColor("#09090f"))
+    c.setFont("Helvetica-Bold", 13)
+    label = "✓ Authentic" if conf_pct >= 70 else "⚠ Uncertain" if conf_pct >= 45 else "✗ Suspicious"
+    c.drawCentredString(W - 85, H - 38, label)
+
+    # ── Scan info ───────────────────────────────────────────────────────────
+    y = H - 100
+    def field(title, value, ypos):
+        c.setFont("Helvetica-Bold", 9)
+        c.setFillColor(colors.HexColor("#52525b"))
+        c.drawString(36, ypos, title.upper())
+        c.setFont("Helvetica", 12)
+        c.setFillColor(colors.HexColor("#e4e4e7"))
+        c.drawString(150, ypos, str(value) if value else "—")
+
+    field("File", scan.get("file_name", "—"), y);           y -= 24
+    field("Document Type", scan.get("doc_type", "—"), y);   y -= 24
+    field("Model Used", scan.get("model_used", "—"), y);    y -= 24
+    field("Confidence", f"{conf_pct}%", y);                 y -= 24
+    scanned_at = scan.get("scanned_at")
+    date_str = scanned_at.strftime("%d/%m/%Y %H:%M") if scanned_at else "—"
+    field("Scanned At", date_str, y);                       y -= 40
+
+    # ── Divider ─────────────────────────────────────────────────────────────
+    c.setStrokeColor(colors.HexColor("#27272a"))
+    c.setLineWidth(1)
+    c.line(36, y, W - 36, y);  y -= 20
+
+    # ── Thumbnail ───────────────────────────────────────────────────────────
+    img_data = scan.get("image_data")
+    if img_data:
+        try:
+            img_bytes = base64.b64decode(img_data)
+            img_reader = ImageReader(io.BytesIO(img_bytes))
+            img_w, img_h = 160, 100
+            c.drawImage(img_reader, 36, y - img_h, img_w, img_h, preserveAspectRatio=True, mask="auto")
+            probs_x = 36 + img_w + 20
+        except Exception:
+            probs_x = 36
+            img_h = 0
+    else:
+        probs_x = 36
+        img_h = 0
+
+    # ── Probabilities ───────────────────────────────────────────────────────
+    probs = scan.get("probabilities", {})
+    if probs:
+        py = y - 10
+        c.setFont("Helvetica-Bold", 9)
+        c.setFillColor(colors.HexColor("#52525b"))
+        c.drawString(probs_x, py, "PROBABILITIES")
+        py -= 18
+        bar_w = W - probs_x - 36
+        for lbl, val in sorted(probs.items(), key=lambda x: -x[1]):
+            pct = round(val * 100)
+            is_top = lbl == scan.get("doc_type")
+            # label
+            c.setFont("Helvetica", 10)
+            c.setFillColor(colors.HexColor("#a1a1aa"))
+            c.drawString(probs_x, py, lbl)
+            py -= 14
+            # bar bg
+            c.setFillColor(colors.HexColor("#27272a"))
+            c.roundRect(probs_x, py, bar_w, 8, 3, fill=1, stroke=0)
+            # bar fill
+            fill_color = "#a3e635" if is_top else "#3f3f46"
+            c.setFillColor(colors.HexColor(fill_color))
+            c.roundRect(probs_x, py, max(bar_w * val, 4), 8, 3, fill=1, stroke=0)
+            # pct text
+            c.setFont("Helvetica-Bold", 8)
+            c.setFillColor(colors.HexColor("#e4e4e7"))
+            c.drawRightString(W - 36, py, f"{pct}%")
+            py -= 22
+
+    # ── Footer ──────────────────────────────────────────────────────────────
+    c.setFillColor(colors.HexColor("#27272a"))
+    c.rect(0, 0, W, 32, fill=1, stroke=0)
+    c.setFont("Helvetica", 8)
+    c.setFillColor(colors.HexColor("#52525b"))
+    c.drawCentredString(W / 2, 11, f"Generated by DocuGuard · {datetime.utcnow().strftime('%d/%m/%Y %H:%M')} UTC · Report ID: {scan_id}")
+
+    c.save()
+    buf.seek(0)
+    filename = f"docuguard-report-{scan_id[:8]}.pdf"
+    return StreamingResponse(
+        buf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+# ── Delete all my scans ───────────────────────────────────────────────────────
+@router.delete("/my/all")
+def delete_all_my_scans(user = Depends(get_current_user)):
+    result = scans_collection.delete_many({"user_id": user["id"]})
+    return {"deleted": result.deleted_count}
+
+# ── Delete single scan ────────────────────────────────────────────────────────
+@router.delete("/{scan_id}")
+def delete_scan(scan_id: str, user = Depends(get_current_user)):
+    try:
+        oid = ObjectId(scan_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid scan ID")
+
+    scan = scans_collection.find_one({"_id": oid})
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+
+    if scan["user_id"] != user["id"] and user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    scans_collection.delete_one({"_id": oid})
+    return {"message": "Scan deleted"}

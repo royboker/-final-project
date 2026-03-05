@@ -260,6 +260,31 @@
 .profile-scan-row.clickable { cursor: pointer; transition: background 0.15s; }
 .profile-scan-row.clickable:hover { background: rgba(163,230,53,0.06); }
 
+.profile-scan-download-btn {
+  background: none; border: none; color: #a3e635;
+  font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  padding: 0.2rem 0.3rem; border-radius: 4px; flex-shrink: 0;
+  transition: color 0.15s, background 0.15s; line-height: 1;
+}
+.profile-scan-download-btn:hover { background: rgba(163,230,53,0.1); }
+
+.profile-scan-delete-btn {
+  background: none;
+  border: none;
+  color: #52525b;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+.profile-scan-delete-btn:hover {
+  color: #f87171;
+  background: rgba(239,68,68,0.1);
+}
+
 /* ── Scan Detail Modal ── */
 .scan-modal-overlay {
   position: fixed; inset: 0; z-index: 1000;

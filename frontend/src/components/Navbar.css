@@ -190,6 +190,41 @@
 .nav-dropdown-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
 .nav-dropdown-item.danger:hover { background: rgba(239,68,68,0.08); color: #f87171; }
 
+/* ── Chat notification ── */
+.nav-chat-notif {
+  position: relative;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #a1a1aa;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.nav-chat-notif:hover { border-color: var(--lime); color: #fff; }
+.nav-chat-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #09090f;
+}
+
 /* ── Hamburger ── */
 .hamburger {
   display: none;
