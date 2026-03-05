@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir \
     "python-jose[cryptography]" argon2-cffi pymongo python-dotenv \
     certifi authlib httpx itsdangerous \
     pillow numpy scikit-learn timm albumentations \
-    reportlab cloudinary
+    reportlab cloudinary resend
 
 COPY . .
 
