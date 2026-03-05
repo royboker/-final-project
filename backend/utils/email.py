@@ -1,13 +1,12 @@
-import smtplib
 import os
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import resend
 from dotenv import load_dotenv
 
 load_dotenv()
 
-MAIL_USER = os.getenv("MAIL_USER")
-MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
+# Resend API configuration (works with Render - no SMTP port blocking!)
+resend.api_key = os.getenv("RESEND_API_KEY")
+MAIL_FROM = os.getenv("MAIL_FROM", "DocuGuard <onboarding@resend.dev>")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 def send_reset_email(to_email: str, token: str, name: str):
@@ -32,16 +31,14 @@ def send_reset_email(to_email: str, token: str, name: str):
     </div>
     """
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Reset your DocuGuard password"
-    msg["From"] = MAIL_USER
-    msg["To"] = to_email
-    msg.attach(MIMEText(html, "html"))
-
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
-            server.login(MAIL_USER, MAIL_PASSWORD)
-            server.sendmail(MAIL_USER, to_email, msg.as_string())
+        params = {
+            "from": MAIL_FROM,
+            "to": [to_email],
+            "subject": "Reset your DocuGuard password",
+            "html": html,
+        }
+        resend.Emails.send(params)
         print(f"✅ Reset email sent to {to_email}")
         return True
     except Exception as e:
@@ -72,16 +69,14 @@ def send_verification_email(to_email: str, token: str, name: str):
     </div>
     """
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Verify your DocuGuard account"
-    msg["From"] = MAIL_USER
-    msg["To"] = to_email
-    msg.attach(MIMEText(html, "html"))
-
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
-            server.login(MAIL_USER, MAIL_PASSWORD)
-            server.sendmail(MAIL_USER, to_email, msg.as_string())
+        params = {
+            "from": MAIL_FROM,
+            "to": [to_email],
+            "subject": "Verify your DocuGuard account",
+            "html": html,
+        }
+        resend.Emails.send(params)
         print(f"✅ Verification email sent to {to_email}")
         return True
     except Exception as e:
