@@ -13,9 +13,12 @@ app = FastAPI(title="DocuGuard API", version="1.0.0")
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
 app.add_middleware(SessionMiddleware, secret_key=os.getenv("JWT_SECRET", "secret"))
+_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000,http://localhost")
+ALLOWED_ORIGINS = [o.strip() for o in _origins.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

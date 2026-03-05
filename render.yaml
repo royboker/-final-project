@@ -1,0 +1,37 @@
+services:
+  # Backend Service
+  - type: web
+    name: docuguard-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        value: https://docuguard-frontend.onrender.com
+      - key: MAIL_USER
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://docuguard-frontend.onrender.com,http://localhost:3000
+    healthCheckPath: /
+
+  # Frontend Service
+  - type: web
+    name: docuguard-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        value: https://docuguard-backend.onrender.com
