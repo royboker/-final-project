@@ -1,9 +1,10 @@
 import { useState, useRef, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import Navbar from "../components/Navbar";
 import "./ScanPage.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "../config.js";
 
 const MODELS = [
   {
@@ -28,6 +29,7 @@ const CONF_COLOR = (c) => {
 
 export default function ScanPage() {
   const { token } = useAuth();
+  const toast = useToast();
 
   const [model, setModel] = useState(null);
   const [file, setFile] = useState(null);
@@ -80,8 +82,10 @@ export default function ScanPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.detail || "Classification failed");
       setResult(data);
+      toast({ message: "Document classified successfully", type: "success" });
     } catch (err) {
       setError(err.message);
+      toast({ message: err.message, type: "error" });
     } finally {
       setLoading(false);
     }
@@ -92,7 +96,7 @@ export default function ScanPage() {
     const res = await fetch(`${API_URL}/scans/${scanId}/report`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return;
+    if (!res.ok) { toast({ message: "Failed to download report", type: "error" }); return; }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

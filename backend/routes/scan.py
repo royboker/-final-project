@@ -27,8 +27,7 @@ load_dotenv()
 router = APIRouter(prefix="/scans", tags=["Scans"])
 security = HTTPBearer()
 
-JWT_SECRET = os.getenv("JWT_SECRET", "secret")
-ALGORITHM = "HS256"
+from config import JWT_SECRET, ALGORITHM
 
 # ── Model paths ───────────────────────────────────────────────────────────────
 _ROOT = Path(__file__).resolve().parent.parent.parent

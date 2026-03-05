@@ -34,8 +34,7 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-JWT_SECRET = os.getenv("JWT_SECRET", "secret")
-ALGORITHM = "HS256"
+from config import JWT_SECRET, ALGORITHM
 TOKEN_EXPIRE_HOURS = 24 * 7  # 7 days
 
 ph = PasswordHasher()

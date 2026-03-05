@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import "./ChatWidget.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "../config.js";
 
 export default function ChatWidget() {
   const { isAuthed, user, token } = useAuth();
@@ -16,6 +16,7 @@ export default function ChatWidget() {
   const [history, setHistory] = useState([]);
   const [historySession, setHistorySession] = useState(null);
   const [historyMessages, setHistoryMessages] = useState([]);
+  const [confirmClose, setConfirmClose] = useState(false);
 
   const messagesEndRef = useRef(null);
   const isAdmin = String(user?.role ?? "").trim().toLowerCase() === "admin";
@@ -56,8 +57,10 @@ export default function ChatWidget() {
     sendTyping();
   };
 
-  const handleCloseSession = async () => {
-    if (!confirm("Close this conversation? It will be saved in your history.")) return;
+  const handleCloseSession = () => setConfirmClose(true);
+
+  const confirmCloseSession = async () => {
+    setConfirmClose(false);
     await closeSession();
   };
 
@@ -100,6 +103,18 @@ export default function ChatWidget() {
       {/* Chat window */}
       {open && (
         <div className="chat-window">
+          {/* Confirm close modal */}
+          {confirmClose && (
+            <div className="chat-confirm-overlay">
+              <div className="chat-confirm-box">
+                <p>Close this conversation?<br /><span>It will be saved in your history.</span></p>
+                <div className="chat-confirm-actions">
+                  <button className="chat-confirm-yes" onClick={confirmCloseSession}>Close</button>
+                  <button className="chat-confirm-no" onClick={() => setConfirmClose(false)}>Cancel</button>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Header */}
           <div className="chat-header">
             <div className="chat-header-info">
@@ -118,10 +133,10 @@ export default function ChatWidget() {
               </div>
               {session?.status === "active" && (
                 <>
-                  <button className="chat-btn-icon" onClick={loadHistory} title="Chat history">
+                  <button className="chat-btn-icon" onClick={loadHistory} title="History">
                     <HistoryIcon />
                   </button>
-                  <button className="chat-btn-icon danger" onClick={handleCloseSession} title="End conversation">
+                  <button className="chat-btn-icon danger" onClick={handleCloseSession} title="Close chat">
                     <EndIcon />
                   </button>
                 </>
@@ -282,9 +297,9 @@ function EndIcon() {
 }
 function HistoryIcon() {
   return (
-    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="1 4 1 10 7 10" />
-      <path d="M3.51 15a9 9 0 1 0 .49-4.5" />
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
     </svg>
   );
 }

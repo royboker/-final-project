@@ -9,8 +9,7 @@ from db.mongo import db  # נצטרך גם scans
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
-JWT_SECRET = os.getenv("JWT_SECRET", "secret")
-ALGORITHM = "HS256"
+from config import JWT_SECRET, ALGORITHM
 
 # ── Middleware helper ─────────────────────────────────────────────────────────
 def require_admin(authorization: str = Header(...)):

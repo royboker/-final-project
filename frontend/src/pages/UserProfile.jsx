@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import { profileApi, api } from "../lib/api";
 import Navbar from "../components/Navbar";
 import "./UserProfile.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { API_URL } from "../config.js";
 
 export default function UserProfile() {
   const navigate = useNavigate();
   const { user, token, logout } = useAuth();
+  const toast = useToast();
   const [profile, setProfile] = useState(null);
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,10 +52,12 @@ export default function UserProfile() {
     try {
       await profileApi.changePassword(token, pwData.current, pwData.next);
       setPwSuccess("Password changed successfully!");
+      toast({ message: "Password changed successfully", type: "success" });
       setPwData({ current: "", next: "", confirm: "" });
       setTimeout(() => { setPwSuccess(""); setShowPasswordForm(false); }, 2000);
     } catch (err) {
       setPwError(err.message);
+      toast({ message: err.message, type: "error" });
     } finally {
       setPwLoading(false);
     }
@@ -63,7 +67,7 @@ export default function UserProfile() {
     const res = await fetch(`${API_URL}/scans/${scanId}/report`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return;
+    if (!res.ok) { toast({ message: "Failed to download report", type: "error" }); return; }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -79,11 +83,14 @@ export default function UserProfile() {
       if (confirmDelete.type === "single") {
         await api.deleteScan(token, confirmDelete.id);
         setScans(prev => prev.filter(s => s.id !== confirmDelete.id));
+        toast({ message: "Scan deleted", type: "info" });
       } else {
         await api.deleteAllScans(token);
         setScans([]);
+        toast({ message: "All scans deleted", type: "info" });
       }
     } catch (err) {
+      toast({ message: "Failed to delete scan", type: "error" });
       console.error(err);
     } finally {
       setConfirmDelete(null);

@@ -2,16 +2,17 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
+import { useToast } from "../context/ToastContext";
 import { adminApi } from "../lib/api";
 import "./AdminDashboard.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-const WS_URL = API_URL.replace(/^http/, "ws");
+import { API_URL, WS_URL } from "../config.js";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { user, token } = useAuth();
   const { adminUnread, clearAdminUnread } = useChat();
+  const toast = useToast();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
@@ -24,6 +25,7 @@ export default function AdminDashboard() {
   const [expandedScan, setExpandedScan] = useState(null);
   const [viewScansUser, setViewScansUser] = useState(null);
   const [viewScanDetail, setViewScanDetail] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null); // { message, onConfirm }
 
   const fetchData = useCallback(async () => {
     try {
@@ -68,16 +70,30 @@ export default function AdminDashboard() {
     if (scans.length === 0 && !scansLoading) fetchScans();
   }
 
-  async function handleDelete(userId, userName) {
-    if (!confirm(`Delete user "${userName}"? This cannot be undone.`)) return;
-    await adminApi.deleteUser(token, userId);
-    setUsers(u => u.filter(x => x.id !== userId));
+  function handleDelete(userId, userName) {
+    setConfirmAction({
+      message: `Delete user "${userName}"?\nThis cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          await adminApi.deleteUser(token, userId);
+          setUsers(u => u.filter(x => x.id !== userId));
+          toast({ message: `User "${userName}" deleted`, type: "info" });
+        } catch {
+          toast({ message: "Failed to delete user", type: "error" });
+        }
+      },
+    });
   }
 
   async function handleRoleChange(userId, currentRole) {
     const newRole = currentRole === "admin" ? "user" : "admin";
-    await adminApi.changeRole(token, userId, newRole);
-    setUsers(u => u.map(x => x.id === userId ? { ...x, role: newRole } : x));
+    try {
+      await adminApi.changeRole(token, userId, newRole);
+      setUsers(u => u.map(x => x.id === userId ? { ...x, role: newRole } : x));
+      toast({ message: `Role changed to ${newRole}`, type: "success" });
+    } catch {
+      toast({ message: "Failed to change role", type: "error" });
+    }
   }
 
   const filtered = users.filter(u =>
@@ -96,6 +112,19 @@ export default function AdminDashboard() {
 
   return (
     <div className="admin-layout">
+      {/* ── Confirm Modal ── */}
+      {confirmAction && (
+        <div className="admin-confirm-overlay" onClick={() => setConfirmAction(null)}>
+          <div className="admin-confirm-box" onClick={e => e.stopPropagation()}>
+            <p>{confirmAction.message.split("\n").map((line, i) => <span key={i}>{line}<br /></span>)}</p>
+            <div className="admin-confirm-actions">
+              <button className="admin-confirm-yes" onClick={async () => { await confirmAction.onConfirm(); setConfirmAction(null); }}>Confirm</button>
+              <button className="admin-confirm-no" onClick={() => setConfirmAction(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Sidebar ── */}
       <aside className="admin-sidebar">
         <a className="admin-logo" href="/">
@@ -454,11 +483,15 @@ function AdminMessagesTab({ token }) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); }
   };
 
-  const closeSession = async (sessionId) => {
-    if (!confirm("Close this conversation?")) return;
-    await fetch(`${API_URL}/chat/close/${sessionId}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-    if (activeSession?.id === sessionId) { setActiveSession(null); activeSessionRef.current = null; setMessages([]); }
+  const closeSession = (sessionId) => {
+    setConfirmAction({
+      message: "Close this conversation?",
+      onConfirm: async () => {
+        await fetch(`${API_URL}/chat/close/${sessionId}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+        setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+        if (activeSession?.id === sessionId) { setActiveSession(null); activeSessionRef.current = null; setMessages([]); }
+      },
+    });
   };
 
   const loadHistory = async () => {
@@ -514,7 +547,15 @@ function AdminMessagesTab({ token }) {
               <button
                 key={s.id}
                 className={`admin-chat-session-item ${activeSession?.id === s.id ? "selected" : ""}`}
-                onClick={() => openSession(s)}
+                onClick={() => {
+                  if (window.innerWidth <= 768 && activeSession?.id === s.id) {
+                    setActiveSession(null);
+                    activeSessionRef.current = null;
+                    setMessages([]);
+                  } else {
+                    openSession(s);
+                  }
+                }}
               >
                 <div className="admin-chat-session-top">
                   <span className="admin-chat-session-name">{s.user_name || s.user_email}</span>

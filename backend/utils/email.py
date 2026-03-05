@@ -38,9 +38,14 @@ def send_reset_email(to_email: str, token: str, name: str):
     msg["To"] = to_email
     msg.attach(MIMEText(html, "html"))
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(MAIL_USER, MAIL_PASSWORD)
-        server.sendmail(MAIL_USER, to_email, msg.as_string())
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(MAIL_USER, MAIL_PASSWORD)
+            server.sendmail(MAIL_USER, to_email, msg.as_string())
+        print(f"✅ Reset email sent to {to_email}")
+    except Exception as e:
+        print(f"❌ Failed to send reset email: {e}")
+        raise
 
         
 def send_verification_email(to_email: str, token: str, name: str):

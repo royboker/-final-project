@@ -11,8 +11,7 @@ router = APIRouter(tags=["Chat"])
 sessions_col = db["chat_sessions"]
 messages_col = db["chat_messages"]
 
-JWT_SECRET = os.getenv("JWT_SECRET", "secret")
-ALGORITHM = "HS256"
+from config import JWT_SECRET, ALGORITHM
 
 
 # ── Connection Manager ─────────────────────────────────────────────────────────
@@ -270,8 +269,8 @@ async def user_ws(websocket: WebSocket, token: str):
                         {"_id": ObjectId(session_id)},
                         {"$inc": {"unread_admin": 1}, "$set": {"last_message": content}},
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"❌ Failed to update session unread_admin: {e}")
 
                 serialized = serialize_message(msg)
                 await websocket.send_json({"type": "message", "message": serialized})
@@ -302,8 +301,8 @@ async def user_ws(websocket: WebSocket, token: str):
                             {"_id": ObjectId(session_id)},
                             {"$set": {"unread_user": 0}},
                         )
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"❌ Failed to update session unread_user: {e}")
 
     except WebSocketDisconnect:
         pass
@@ -383,8 +382,8 @@ async def admin_ws(websocket: WebSocket, token: str):
                                 "type": "typing",
                                 "session_id": session_id,
                             })
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"❌ Failed to forward typing indicator: {e}")
 
             elif msg_type == "read":
                 session_id = data.get("session_id")
@@ -394,8 +393,8 @@ async def admin_ws(websocket: WebSocket, token: str):
                             {"_id": ObjectId(session_id)},
                             {"$set": {"unread_admin": 0}},
                         )
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"❌ Failed to update session unread_admin to 0: {e}")
 
     except WebSocketDisconnect:
         pass

@@ -331,3 +331,28 @@
   .mobile-menu, .mobile-backdrop { display: block; }
   .nav-profile.mobile-btn { border-radius: 12px; padding: 0.6rem 1rem; }
 }
+
+/* ── Logo group + Theme toggle ─────────────────────────────────────────────── */
+.logo-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+.theme-toggle:hover {
+  border-color: var(--lime);
+  color: var(--lime);
+}

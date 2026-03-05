@@ -642,3 +642,60 @@
   .admin-chat-sidebar { width: 100%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); max-height: 220px; }
   .admin-chat-main { min-height: 400px; }
 }
+
+/* ── Confirm Modal ─────────────────────────────────────────────────────────── */
+.admin-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+}
+.admin-confirm-box {
+  background: #18181b;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 1.5rem 2rem;
+  min-width: 280px;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.admin-confirm-box p {
+  font-size: 0.95rem;
+  color: #e4e4e7;
+  margin: 0 0 1.25rem;
+  line-height: 1.6;
+}
+.admin-confirm-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+}
+.admin-confirm-yes {
+  background: #f87171;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.admin-confirm-yes:hover { opacity: 0.85; }
+.admin-confirm-no {
+  background: #27272a;
+  color: #a1a1aa;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.admin-confirm-no:hover { background: #3f3f46; color: #fff; }

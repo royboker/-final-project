@@ -377,3 +377,63 @@
     bottom: 1rem;
   }
 }
+
+/* ── Confirm overlay (inside chat window) ─────────────────────────────────── */
+.chat-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 9, 15, 0.75);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 16px;
+}
+.chat-confirm-box {
+  background: #18181b;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+  max-width: 240px;
+}
+.chat-confirm-box p {
+  font-size: 0.9rem;
+  color: #e4e4e7;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+.chat-confirm-box p span {
+  font-size: 0.78rem;
+  color: #71717a;
+}
+.chat-confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+.chat-confirm-yes {
+  background: #f87171;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.chat-confirm-yes:hover { opacity: 0.85; }
+.chat-confirm-no {
+  background: #27272a;
+  color: #a1a1aa;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.chat-confirm-no:hover { background: #3f3f46; color: #fff; }

@@ -3,8 +3,7 @@ import { useAuth } from "./AuthContext";
 
 const ChatContext = createContext(null);
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
-const WS_URL = API_URL.replace(/^http/, "ws");
+import { API_URL, WS_URL } from "../config.js";
 
 export function ChatProvider({ children }) {
   const { token, user, isAuthed } = useAuth();

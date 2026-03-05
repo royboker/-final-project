@@ -1,0 +1,445 @@
+/* ── Toast Notifications ───────────────────────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 9999;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  pointer-events: all;
+  cursor: pointer;
+  animation: toastIn 0.22s ease;
+  white-space: nowrap;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.toast-success { background: #a3e635; color: #09090f; }
+.toast-error   { background: #f87171; color: #fff; }
+.toast-info    { background: #60a5fa; color: #fff; }
+.toast-icon    { font-weight: 700; font-size: 0.95rem; }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   LIGHT MODE — body.light overrides
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+body.light {
+  --bg:       #f1f5f9;
+  --surface:  #ffffff;
+  --surface2: #f8fafc;
+  --border:   rgba(0,0,0,0.09);
+  --white:    #0f172a;
+  --muted:    #64748b;
+  --text:     #475569;
+  --lime:     #65a30d;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────────── */
+body.light .nav {
+  background: rgba(241,245,249,0.92);
+  border-bottom-color: rgba(0,0,0,0.08);
+}
+body.light .logo { color: #0f172a; }
+body.light .logo span { color: #65a30d; }
+body.light .btn-ghost { color: #475569; border-color: rgba(0,0,0,0.12); }
+body.light .btn-ghost:hover { color: #0f172a; border-color: #65a30d; }
+body.light .nav-profile { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); color: #0f172a; }
+body.light .nav-profile-info span:last-child { color: #0f172a; }
+body.light .nav-dropdown { background: #fff; border-color: rgba(0,0,0,0.1); box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
+body.light .nav-dropdown-name { color: #0f172a; }
+body.light .nav-dropdown-item { color: #475569; }
+body.light .nav-dropdown-item:hover { background: rgba(0,0,0,0.04); color: #0f172a; }
+body.light .nav-chat-notif { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); color: #475569; }
+body.light .hamburger { border-color: rgba(0,0,0,0.12); }
+body.light .hamburger span { background: #0f172a; }
+body.light .mobile-menu { background: rgba(241,245,249,0.98); border-color: rgba(0,0,0,0.08); }
+body.light .mobile-link { color: #475569; border-color: rgba(0,0,0,0.08); }
+
+/* ── Scan Page ──────────────────────────────────────────────────────────────── */
+body.light .scan-page { background: #f1f5f9; }
+body.light .scan-header h1 { color: #0f172a; }
+body.light .scan-header p { color: #64748b; }
+body.light .scan-card { background: #fff; border-color: rgba(0,0,0,0.08); }
+body.light .scan-card-label { color: #64748b; }
+body.light .scan-model-btn { background: #f8fafc; border-color: rgba(0,0,0,0.1); color: #334155; }
+body.light .scan-model-btn:hover { border-color: #65a30d; }
+body.light .scan-model-name { color: #0f172a; }
+body.light .scan-model-sub { color: #64748b; }
+body.light .scan-model-desc { color: #64748b; }
+body.light .scan-dropzone { background: #f8fafc; border-color: rgba(0,0,0,0.1); }
+body.light .scan-drop-title { color: #334155; }
+body.light .scan-drop-sub { color: #94a3b8; }
+body.light .scan-file-name { color: #0f172a; }
+body.light .scan-file-size { color: #64748b; }
+body.light .scan-result { background: #fff; border-color: rgba(0,0,0,0.08); }
+body.light .scan-verdict { background: #f0fdf4; border-color: rgba(101,163,13,0.2); }
+body.light .scan-verdict-label { color: #64748b; }
+body.light .scan-verdict-type { color: #0f172a; }
+body.light .scan-conf-card { background: #f8fafc; border-color: rgba(0,0,0,0.08); }
+body.light .scan-conf-track { background: #e2e8f0; }
+body.light .scan-probs { background: #f8fafc; border-color: rgba(0,0,0,0.08); }
+body.light .scan-probs-label { color: #64748b; }
+body.light .scan-prob-name { color: #334155; }
+body.light .scan-prob-bar-wrap { background: #e2e8f0; }
+body.light .scan-prob-pct { color: #475569; }
+body.light .scan-meta-card { background: #f8fafc; border-color: rgba(0,0,0,0.08); }
+body.light .scan-meta-lbl { color: #64748b; }
+body.light .scan-meta-val { color: #0f172a; }
+body.light .scan-empty { color: #94a3b8; }
+body.light .scan-empty-title { color: #334155; }
+body.light .scan-empty-sub { color: #94a3b8; }
+
+/* ── User Profile ───────────────────────────────────────────────────────────── */
+body.light .profile-page { background: #f1f5f9; }
+body.light .profile-identity-card { background: #fff; border-color: rgba(0,0,0,0.08); }
+body.light .profile-identity-info h1 { color: #0f172a; }
+body.light .profile-identity-email { color: #64748b; }
+body.light .profile-card { background: #fff; border-color: rgba(0,0,0,0.08); }
+body.light .profile-card-title { color: #334155; border-color: rgba(0,0,0,0.06); }
+body.light .profile-detail-label { color: #64748b; }
+body.light .profile-detail-value { color: #0f172a; }
+body.light .profile-detail-row { border-color: rgba(0,0,0,0.05); }
+body.light .profile-scan-row { background: #f8fafc; border-color: rgba(0,0,0,0.06); }
+body.light .profile-scan-row:hover { background: #f1f5f9; }
+body.light .profile-scan-name { color: #334155; }
+body.light .profile-scan-date { color: #94a3b8; }
+body.light .profile-istat-val { color: #0f172a; }
+body.light .profile-istat-label { color: #64748b; }
+body.light .profile-istat-divider { background: rgba(0,0,0,0.06); }
+body.light .profile-input-wrap label { color: #64748b; }
+body.light .profile-input-wrap input { background: #f8fafc; border-color: rgba(0,0,0,0.1); color: #0f172a; }
+body.light .profile-input-wrap input:focus { border-color: #65a30d; }
+body.light .profile-btn-ghost { background: #f1f5f9; border-color: rgba(0,0,0,0.1); color: #475569; }
+body.light .danger-zone { border-color: rgba(239,68,68,0.15); }
+body.light .profile-danger-title { color: #0f172a; }
+body.light .profile-danger-desc { color: #64748b; }
+
+/* ── Chat Widget ────────────────────────────────────────────────────────────── */
+body.light .chat-window { background: #fff; border-color: rgba(0,0,0,0.1); }
+body.light .chat-header { background: #f8fafc; border-color: rgba(0,0,0,0.08); }
+body.light .chat-header-name { color: #0f172a; }
+body.light .chat-body { background: #fff; }
+body.light .chat-msg.theirs .chat-msg-bubble { background: #f1f5f9; color: #334155; }
+body.light .chat-msg.mine .chat-msg-bubble { background: #65a30d; color: #fff; }
+body.light .chat-footer { background: #f8fafc; border-color: rgba(0,0,0,0.08); }
+body.light .chat-input { background: #f1f5f9; border-color: rgba(0,0,0,0.1); color: #334155; }
+body.light .chat-input::placeholder { color: #94a3b8; }
+body.light .chat-closed-notice { background: #f8fafc; border-color: rgba(0,0,0,0.08); color: #64748b; }
+body.light .chat-btn-icon { color: #94a3b8; }
+body.light .chat-btn-icon:hover { background: rgba(0,0,0,0.05); color: #0f172a; }
+body.light .chat-history-panel { background: #fff; }
+body.light .chat-history-item { background: #f8fafc; border-color: rgba(0,0,0,0.06); }
+body.light .chat-history-item:hover { background: #f1f5f9; }
+body.light .chat-history-item-date { color: #94a3b8; }
+body.light .chat-history-item-msg { color: #64748b; }
+body.light .chat-confirm-box { background: #fff; border-color: rgba(0,0,0,0.1); }
+body.light .chat-confirm-box p { color: #334155; }
+
+/* ── Auth pages (login/register) ─────────────────────────────────────────── */
+body.light .auth-card,
+body.light .login-card,
+body.light .register-card { background: #fff; border-color: rgba(0,0,0,0.08); }
+body.light .auth-title,
+body.light .login-title,
+body.light .register-title { color: #0f172a; }
+body.light .auth-input,
+body.light .login-input,
+body.light .register-input,
+body.light input[type="text"],
+body.light input[type="email"],
+body.light input[type="password"] {
+  background: #f8fafc;
+  border-color: rgba(0,0,0,0.1);
+  color: #0f172a;
+}
+body.light input::placeholder { color: #94a3b8; }
+body.light label { color: #475569; }
+
+/* ── Modals ─────────────────────────────────────────────────────────────────── */
+body.light .scan-modal { background: #fff; border-color: rgba(0,0,0,0.1); }
+body.light .scan-modal-title { color: #0f172a; }
+body.light .scan-modal-lbl { color: #64748b; }
+body.light .scan-modal-val { color: #334155; }
+body.light .scan-modal-close { color: #94a3b8; }
+body.light .scan-modal-close:hover { color: #0f172a; }
+
+/* ── Auth pages (Login / Register) ─────────────────────────────────────────── */
+body.light .auth-layout { background: #f1f5f9; }
+body.light .auth-left { background: #f8fafc; border-right-color: rgba(0,0,0,0.08); }
+body.light .auth-logo { color: #0f172a; }
+body.light .auth-logo span { color: #65a30d; }
+body.light .auth-header h1 { color: #0f172a; }
+body.light .auth-header p { color: #64748b; }
+body.light .auth-back { color: #64748b; border-color: rgba(0,0,0,0.1); }
+body.light .auth-back:hover { color: #0f172a; }
+body.light .auth-google {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.12);
+  color: #334155;
+}
+body.light .auth-google:hover { background: #f8fafc; border-color: rgba(0,0,0,0.2); }
+body.light .auth-divider { color: #94a3b8; }
+body.light .auth-divider::before,
+body.light .auth-divider::after { background: rgba(0,0,0,0.1); }
+body.light .auth-field label { color: #475569; }
+body.light .auth-field input,
+body.light .auth-input-wrap input {
+  background: #fff;
+  border-color: rgba(0,0,0,0.12);
+  color: #0f172a;
+}
+body.light .auth-field input:focus,
+body.light .auth-input-wrap input:focus { border-color: #65a30d; box-shadow: 0 0 0 3px rgba(101,163,13,0.12); }
+body.light .auth-check { color: #475569; }
+body.light .auth-check-box { border-color: rgba(0,0,0,0.15); background: #fff; }
+body.light .auth-forgot { color: #65a30d; }
+body.light .auth-link { color: #64748b; }
+body.light .auth-link a { color: #65a30d; }
+body.light .reg-strength-label { color: #64748b; }
+
+/* ── Verify / Forgot / Reset / Check Email ──────────────────────────────────── */
+body.light .verify-layout { background: #f1f5f9; }
+body.light .verify-card {
+  background: #fff;
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+body.light .verify-logo { color: #0f172a; }
+body.light .verify-logo span { color: #65a30d; }
+body.light .verify-card h2 { color: #0f172a; }
+body.light .verify-card p { color: #64748b; }
+body.light .verify-card .auth-field label { color: #475569; }
+
+/* ── Loading screens ────────────────────────────────────────────────────────── */
+body.light .profile-loading,
+body.light .admin-loading {
+  background: #f1f5f9;
+  color: #475569;
+}
+body.light .profile-loading p,
+body.light .admin-loading p { color: #64748b; }
+
+/* ── LandingPage (Hero / sections) ─────────────────────────────────────────── */
+body.light .hero { background: #f1f5f9; }
+body.light .hero h1 { color: #0f172a; }
+body.light .hero p { color: #475569; }
+body.light .section-alt { background: #f8fafc; }
+body.light .step-card,
+body.light .feature-card {
+  background: #fff;
+  border-color: rgba(0,0,0,0.07);
+}
+body.light .step-card h3,
+body.light .feature-card h3 { color: #0f172a; }
+body.light .step-card p,
+body.light .feature-card p { color: #64748b; }
+body.light .footer { background: #0f172a; }
+
+/* ── Floating Doc Cards (hero + auth pages) ── */
+body.light .doc-card,
+body.light .auth-card {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+body.light .doc-line,
+body.light .auth-card-line { background: rgba(0,0,0,0.1); }
+body.light .doc-badge,
+body.light .auth-card-badge.green {
+  color: #16a34a;
+  background: rgba(22,163,74,0.1);
+  border-color: rgba(22,163,74,0.25);
+}
+body.light .doc-badge.red,
+body.light .auth-card-badge.red {
+  color: #dc2626;
+  background: rgba(220,38,38,0.08);
+  border-color: rgba(220,38,38,0.25);
+}
+
+/* ── Verify card text (hardcoded colors override) ───────────────────────────── */
+body.light .verify-card h2 { color: #0f172a; }
+body.light .verify-card p { color: #475569; }
+body.light .verify-logo span { color: #65a30d; }
+body.light .verify-glow { background: radial-gradient(circle, rgba(101,163,13,0.06) 0%, transparent 70%); }
+
+/* ── Profile/Admin loading spinner ─────────────────────────────────────────── */
+body.light .profile-spinner,
+body.light .admin-spinner {
+  border-color: rgba(0,0,0,0.1);
+  border-top-color: #65a30d;
+}
+
+/* ── Admin Dashboard ────────────────────────────────────────────────────────── */
+body.light .admin-layout { background: #f1f5f9; }
+body.light .admin-loading { background: #f1f5f9; color: #475569; }
+
+body.light .admin-sidebar {
+  background: #fff;
+  border-right-color: rgba(0,0,0,0.08);
+}
+body.light .admin-logo { color: #0f172a; }
+body.light .admin-nav button { color: #64748b; }
+body.light .admin-nav button:hover { background: rgba(0,0,0,0.04); color: #0f172a; }
+body.light .admin-nav button.active { background: rgba(101,163,13,0.1); color: #65a30d; }
+body.light .admin-me-name { color: #0f172a; }
+body.light .admin-me-role { color: #94a3b8; }
+body.light .admin-back-btn { border-color: rgba(0,0,0,0.1); color: #64748b; }
+body.light .admin-back-btn:hover { border-color: #65a30d; color: #65a30d; }
+
+body.light .admin-main { background: #f1f5f9; }
+body.light .admin-topbar h1 { color: #0f172a; }
+body.light .admin-topbar p { color: #94a3b8; }
+
+body.light .admin-stat-card {
+  background: #fff;
+  border-color: rgba(0,0,0,0.08);
+}
+body.light .admin-stat-card:hover { border-color: rgba(0,0,0,0.15); }
+body.light .admin-stat-value { color: #0f172a; }
+body.light .admin-stat-label { color: #64748b; }
+
+body.light .admin-chart-card {
+  background: #fff;
+  border-color: rgba(0,0,0,0.08);
+}
+body.light .admin-chart-card h3 { color: #0f172a; }
+body.light .admin-chart-label { color: #94a3b8; }
+
+body.light .admin-search-wrap {
+  background: #fff;
+  border-color: rgba(0,0,0,0.1);
+  color: #94a3b8;
+}
+body.light .admin-search-wrap input { color: #0f172a; }
+body.light .admin-search-wrap input::placeholder { color: #94a3b8; }
+body.light .admin-count { color: #94a3b8; }
+
+body.light .admin-table-wrap {
+  background: #fff;
+  border-color: rgba(0,0,0,0.08);
+}
+body.light .admin-table th {
+  color: #94a3b8;
+  border-bottom-color: rgba(0,0,0,0.06);
+}
+body.light .admin-table td {
+  color: #475569;
+  border-bottom-color: rgba(0,0,0,0.04);
+}
+body.light .admin-table tr:hover td { background: rgba(0,0,0,0.02); }
+body.light .admin-user-name { color: #0f172a; }
+body.light .admin-user-email { color: #94a3b8; }
+
+body.light .admin-btn-role {
+  background: #f1f5f9;
+  border-color: rgba(0,0,0,0.1);
+  color: #475569;
+}
+body.light .admin-btn-role:hover { border-color: #65a30d; color: #65a30d; }
+
+body.light .admin-conf-bar > div { background: rgba(0,0,0,0.08); }
+body.light .admin-conf-bar span { color: #64748b; }
+
+/* ── Admin mobile cards ── */
+body.light .admin-card {
+  background: #fff;
+  border-color: rgba(0,0,0,0.08);
+}
+body.light .admin-card-body { border-top-color: rgba(0,0,0,0.06); }
+body.light .admin-card-row { color: #475569; }
+body.light .admin-card-label { color: #94a3b8; }
+body.light .admin-card-actions { border-top-color: rgba(0,0,0,0.05); }
+body.light .admin-bottom-nav {
+  background: rgba(241,245,249,0.97);
+  border-top-color: rgba(0,0,0,0.08);
+}
+body.light .admin-bottom-nav button { color: #94a3b8; }
+body.light .admin-bottom-nav button.active { color: #65a30d; }
+body.light .admin-bottom-nav button:hover { color: #0f172a; }
+
+/* ── Admin Chat ── */
+body.light .admin-chat-sidebar {
+  background: #f8fafc;
+  border-right-color: rgba(0,0,0,0.08);
+}
+body.light .admin-chat-sidebar-header {
+  color: #94a3b8;
+  border-bottom-color: rgba(0,0,0,0.06);
+}
+body.light .admin-chat-sidebar-sub { color: #94a3b8; }
+body.light .admin-chat-hist-btn { border-color: rgba(0,0,0,0.1); color: #64748b; }
+body.light .admin-chat-hist-btn:hover { border-color: #65a30d; color: #65a30d; }
+body.light .admin-chat-back-btn {
+  border-bottom-color: rgba(0,0,0,0.06);
+  color: #65a30d;
+}
+body.light .admin-chat-back-btn:hover { background: rgba(101,163,13,0.06); }
+body.light .admin-chat-session-item { border-bottom-color: rgba(0,0,0,0.05); }
+body.light .admin-chat-session-item:hover { background: rgba(0,0,0,0.03); }
+body.light .admin-chat-session-item.selected { background: rgba(101,163,13,0.07); }
+body.light .admin-chat-session-name { color: #0f172a; }
+body.light .admin-chat-session-msg { color: #64748b; }
+body.light .admin-chat-session-date { color: #94a3b8; }
+body.light .admin-chat-empty { color: #94a3b8; }
+body.light .admin-chat-placeholder { color: #94a3b8; }
+
+body.light .admin-chat-topbar {
+  background: #f8fafc;
+  border-bottom-color: rgba(0,0,0,0.06);
+}
+body.light .admin-chat-user-name { color: #0f172a; }
+body.light .admin-chat-user-email { color: #64748b; }
+
+body.light .admin-chat-msg.theirs .admin-chat-bubble { background: #e2e8f0; color: #334155; }
+body.light .admin-chat-time { color: #94a3b8; }
+
+body.light .admin-chat-footer { border-top-color: rgba(0,0,0,0.06); }
+body.light .admin-chat-input {
+  background: #f1f5f9;
+  border-color: rgba(0,0,0,0.1);
+  color: #0f172a;
+}
+body.light .admin-chat-input::placeholder { color: #94a3b8; }
+body.light .admin-chat-closed { color: #64748b; border-top-color: rgba(0,0,0,0.06); }
+
+/* ── User Scans Modal (usm) ── */
+body.light .usm-panel {
+  background: #fff;
+  border-color: rgba(0,0,0,0.1);
+}
+body.light .usm-header { border-bottom-color: rgba(0,0,0,0.07); }
+body.light .usm-back-btn { background: #f1f5f9; border-color: rgba(0,0,0,0.1); color: #475569; }
+body.light .usm-back-btn:hover { color: #0f172a; border-color: rgba(0,0,0,0.2); }
+body.light .usm-close-btn { background: #f1f5f9; border-color: rgba(0,0,0,0.08); color: #64748b; }
+body.light .usm-scan-item { background: #f8fafc; border-color: rgba(0,0,0,0.07); }
+body.light .usm-scan-item:hover { border-color: rgba(101,163,13,0.3); background: rgba(101,163,13,0.04); }
+body.light .usm-scan-type { color: #0f172a; }
+body.light .usm-scan-meta { color: #64748b; }
+body.light .usm-scan-date { color: #94a3b8; }
+body.light .usm-thumb { border-color: rgba(0,0,0,0.08); }
+body.light .usm-thumb-placeholder { background: #f1f5f9; }
+
+/* ── Admin Confirm Modal ── */
+body.light .admin-confirm-box {
+  background: #fff;
+  border-color: rgba(0,0,0,0.1);
+}
+body.light .admin-confirm-box p { color: #334155; }
+body.light .admin-confirm-no { background: #f1f5f9; color: #64748b; }
+body.light .admin-confirm-no:hover { background: #e2e8f0; color: #0f172a; }
