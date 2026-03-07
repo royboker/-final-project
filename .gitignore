@@ -10,7 +10,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Python lib directories (not frontend/src/lib!)
+backend/lib/
 lib64/
 parts/
 sdist/
@@ -44,6 +45,13 @@ ehthumbs.db
 Thumbs.db
 
 
+# Environment files - IMPORTANT: Never commit secrets!
+.env
+backend/.env
+frontend/.env
+*.env.local
+*.env.production
+
 # Large datasets - exclude all images and large files
 datasets/idnet/GRC/
 datasets/idnet/RUS/
@@ -62,6 +70,9 @@ datasets/idnet/WV/
 results/models/
 results/logs/
 results/checkpoints/
+
+# Notebooks
+notebooks/
 
 # Keep only small files
 !datasets/README.md

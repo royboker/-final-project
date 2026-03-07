@@ -1,31 +1,61 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+import "./App.css";
+import LandingPage from "./pages/LandingPage";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import AuthCallback from "./pages/AuthCallback";
+import VerifyEmail from "./pages/VerifyEmail";
+import CheckEmail from "./pages/CheckEmail";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import AdminDashboard from "./pages/AdminDashboard";
+import UserProfile from "./pages/UserProfile";
+import ScanPage from "./pages/ScanPage";
+import ChatWidget from "./components/ChatWidget";
 
-// Placeholder components
-const Home = () => (
-  <div style={{ textAlign: 'center', marginTop: '50px' }}>
-    <h1>Welcome to Document Analysis Platform</h1>
-    <p>Please Login to continue.</p>
-    <Link to="/login">Login</Link>
-  </div>
-);
-
-const Login = () => <h2>Login Page (TODO)</h2>;
-const Dashboard = () => <h2>Dashboard (TODO)</h2>;
-
-function App() {
-  return (
-    <Router>
-      <div className="App">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Routes>
-      </div>
-    </Router>
-  );
+function AdminRoute({ children }) {
+  const { isAuthed, user } = useAuth();
+  const role = String(user?.role ?? "user").trim().toLowerCase();
+  if (!isAuthed || role !== "admin") return <Navigate to="/" replace />;
+  return children;
 }
 
-export default App;
+function PrivateRoute({ children }) {
+  const { isAuthed } = useAuth();
+  if (!isAuthed) return <Navigate to="/login" replace />;
+  return children;
+}
 
+export default function App() {
+  return (
+    <BrowserRouter>
+      <ChatWidget />
+      <Routes>
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/check-email" element={<CheckEmail />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/scan" element={
+          <PrivateRoute>
+            <ScanPage />
+          </PrivateRoute>
+        } />
+        <Route path="/profile" element={
+          <PrivateRoute>
+            <UserProfile />
+          </PrivateRoute>
+        } />
+        <Route path="/admin" element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        } />
+      </Routes>
+    </BrowserRouter>
+  );
+}
