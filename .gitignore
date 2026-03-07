@@ -43,9 +43,6 @@ ENV/
 ehthumbs.db
 Thumbs.db
 
-# Logs
-*.log
-logs/
 
 # Large datasets - exclude all images and large files
 datasets/idnet/GRC/
@@ -59,13 +56,7 @@ datasets/idnet/WV/
 *.bmp
 *.tiff
 
-# Model files
-*.pkl
-*.h5
-*.hdf5
-*.model
-*.pth
-*.pt
+
 
 # Results with large files
 results/models/
