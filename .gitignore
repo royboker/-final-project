@@ -67,13 +67,6 @@ datasets/idnet/WV/
 *.bmp
 *.tiff
 
-# Model files
-*.pkl
-*.h5
-*.hdf5
-*.model
-*.pth
-*.pt
 
 # Results with large files
 results/models/
