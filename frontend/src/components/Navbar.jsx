@@ -72,7 +72,7 @@ const showHomeBtn = location.pathname !== "/";
         <div className="logo-group">
           <a className="logo" href="/">
             <DocuGuardLogo />
-            Docu<span>Guard</span>
+            <span className="logo-text">Docu<span>Guard</span></span>
           </a>
           <button className="theme-toggle" onClick={toggleTheme} title={isDark ? "Light mode" : "Dark mode"}>
             {isDark ? <SunIcon /> : <MoonIcon />}

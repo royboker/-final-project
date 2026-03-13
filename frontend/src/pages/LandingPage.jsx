@@ -70,14 +70,14 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { num: "01", title: "Document Upload",         desc: "User uploads an image of an ID, Passport, or Driver License via the web UI" },
-  { num: "02", title: "API Request",             desc: "The image is sent to the backend through an API call" },
-  { num: "03", title: "Input Validation",        desc: "File type, size limit, and basic integrity checks" },
-  { num: "04", title: "Preprocessing",           desc: "Crop, align, resize, and normalize the image for analysis" },
-  { num: "05", title: "Doc Type Classification", desc: "Identify the document type: ID, Passport, or Driver License" },
-  { num: "06", title: "Forgery Detection",       desc: "Decide Authentic vs. Forged with a confidence score" },
-  { num: "07", title: "Return Result",           desc: "The backend returns the result to the UI for display" },
-  { num: "08", title: "Logging & Monitoring",    desc: "Store metadata and performance metrics for auditing and model improvement" },
+  { num: "01", title: "Create Account",  desc: "Register with your email or Google account and verify your identity" },
+  { num: "02", title: "Login",           desc: "Sign in to your DocuGuard account to access the platform" },
+  { num: "03", title: "Upload Document", desc: "Upload a photo of an ID card, Passport, or Driver License" },
+  { num: "04", title: "Choose Model",    desc: "Select an AI model — Vision Transformer (ViT) or ResNet-18" },
+  { num: "05", title: "Run Scan",        desc: "Click Scan and let the AI analyze your document in seconds" },
+  { num: "06", title: "View Result",     desc: "Get an instant verdict: Authentic or Forged with a confidence score" },
+  { num: "07", title: "Download Report", desc: "Export a full PDF report with the scan details and results" },
+  { num: "08", title: "Scan History",    desc: "Access all your previous scans anytime from your profile" },
 ];
 
 const ROLES = [
@@ -242,8 +242,8 @@ const isAuthed = Boolean(token);
       {/* HOW IT WORKS */}
       <div className="flow-section" id="how-it-works">
         <div className="section">
-          <h2 className="section-title">Data flow</h2>
-          <p className="section-sub">{STEPS.length} steps — from upload to result</p>
+          <h2 className="section-title">How it works</h2>
+          <p className="section-sub">{STEPS.length} simple steps — from registration to result</p>
 
           <div className="flow-steps reveal-block" ref={flowRef}>
             {STEPS.map(s => (
@@ -292,7 +292,7 @@ const isAuthed = Boolean(token);
 
       {/* FOOTER */}
       <footer className="footer">
-        <a className="logo" href="/">Docu<em>Guard</em></a>
+        <a className="logo" href="/"><span className="logo-text">Docu<em>Guard</em></span></a>
         <p>© 2025 DocuGuard — All rights reserved</p>
         <div className="footer-links">
           <a href="#" className="btn-ghost">Privacy</a>

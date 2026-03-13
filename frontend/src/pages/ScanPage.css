@@ -229,6 +229,76 @@
 
 .scan-remove-btn:hover { color: #e63946; }
 
+/* ── Privacy toggle ─────────────────────────────────────────────────────────── */
+.scan-privacy-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.scan-privacy-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.scan-privacy-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  flex: 1;
+  color: var(--muted);
+}
+
+.scan-privacy-info > svg { flex-shrink: 0; margin-top: 2px; }
+
+.scan-privacy-label {
+  display: block;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.15rem;
+}
+
+.scan-privacy-sub {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* Switch */
+.scan-privacy-switch {
+  width: 40px;
+  height: 22px;
+  border-radius: 99px;
+  position: relative;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+
+.scan-privacy-switch.on  { background: var(--lime); }
+.scan-privacy-switch.off { background: var(--border); }
+
+.scan-privacy-thumb {
+  position: absolute;
+  top: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.scan-privacy-switch.on  .scan-privacy-thumb { left: calc(100% - 19px); }
+.scan-privacy-switch.off .scan-privacy-thumb { left: 3px; }
+
 /* ── Submit ─────────────────────────────────────────────────────────────────── */
 .scan-submit-btn {
   width: 100%;
@@ -316,63 +386,229 @@
   line-height: 1.5;
 }
 
-/* ── Analyzing ──────────────────────────────────────────────────────────────── */
-.scan-analyzing {
+/* ── Pipeline animation ─────────────────────────────────────────────────────── */
+.scan-pipeline {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 2rem;
-  padding: 3rem 2rem;
+  padding: 2rem 1.5rem;
+  gap: 0;
 }
 
-.scan-pulse-ring {
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  border: 3px solid var(--lime);
-  animation: pulse-ring 1.2s ease-in-out infinite;
-}
-
-@keyframes pulse-ring {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%       { transform: scale(1.15); opacity: 0.5; }
-}
-
-.scan-analyzing-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.scan-astep {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
+.scan-pipeline-title {
   font-size: 0.83rem;
   color: var(--muted);
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.02em;
 }
 
-.scan-astep-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--lime);
-  animation: blink 1.4s ease-in-out infinite;
-}
-
-.scan-astep:nth-child(2) .scan-astep-dot { animation-delay: 0.3s; }
-.scan-astep:nth-child(3) .scan-astep-dot { animation-delay: 0.6s; }
-.scan-astep:nth-child(4) .scan-astep-dot { animation-delay: 0.9s; }
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.2; }
-}
-
-.scan-analyzing-label {
-  font-size: 0.85rem;
+/* Generic node */
+.sp-node {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  font-size: 0.82rem;
   color: var(--muted);
+  transition: border-color 0.3s, color 0.3s, background 0.3s, box-shadow 0.3s;
+  position: relative;
+  z-index: 1;
 }
+
+.sp-node.active {
+  border-color: var(--lime);
+  color: var(--text);
+  background: rgba(163, 230, 53, 0.07);
+  box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.12);
+}
+
+.sp-node.pulse {
+  animation: sp-pulse 1s ease-in-out infinite;
+}
+
+@keyframes sp-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.12); }
+  50%       { box-shadow: 0 0 0 7px rgba(163, 230, 53, 0.22); }
+}
+
+.sp-node-icon {
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  transition: color 0.3s;
+}
+
+.sp-node.active .sp-node-icon { color: var(--lime); }
+
+/* Vertical connector line */
+.sp-line {
+  width: 2px;
+  height: 28px;
+  background: var(--border);
+  transition: background 0.4s;
+  margin: 0 auto;
+}
+
+.sp-line.active { background: var(--lime); }
+
+/* Branches section */
+.sp-branches {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 420px;
+}
+
+/* T-junction row: horizontal bar + 3 vertical stubs */
+.sp-t-row {
+  display: flex;
+  width: 100%;
+  padding: 0 0.25rem;
+  gap: 0.5rem;
+  height: 20px;
+  position: relative;
+}
+
+/* Two half-bars: left (::before) and right (::after) */
+.sp-t-row::before,
+.sp-t-row::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  background: var(--border);
+  transform: translateY(-50%);
+  transition: background 0.4s;
+}
+.sp-t-row::before { left: 16.5%; right: 50%; }
+.sp-t-row::after  { left: 50%;   right: 16.5%; }
+
+.sp-t-stub {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+/* Vertical stub line */
+.sp-t-stub::after {
+  content: "";
+  width: 2px;
+  height: 100%;
+  background: var(--border);
+  display: block;
+  transition: background 0.4s;
+}
+
+/* ── Step 2: all scanning — light up everything ── */
+.sp-branches.active .sp-t-row::before,
+.sp-branches.active .sp-t-row::after,
+.sp-branches.active .sp-t-stub::after { background: var(--lime); }
+
+/* ── Step 3+: winner known — show only the winning path ── */
+/* Reset all */
+.sp-branches.winner-0 .sp-t-row::before,
+.sp-branches.winner-0 .sp-t-row::after,
+.sp-branches.winner-0 .sp-t-stub::after,
+.sp-branches.winner-1 .sp-t-row::before,
+.sp-branches.winner-1 .sp-t-row::after,
+.sp-branches.winner-1 .sp-t-stub::after,
+.sp-branches.winner-2 .sp-t-row::before,
+.sp-branches.winner-2 .sp-t-row::after,
+.sp-branches.winner-2 .sp-t-stub::after { background: var(--border); }
+
+/* Winner-0 (left): left half-bar + left stub */
+.sp-branches.winner-0 .sp-t-row::before { background: var(--lime); }
+.sp-branches.winner-0 .sp-t-stub:nth-child(1)::after { background: var(--lime); }
+
+/* Winner-1 (center): just center stub, no half-bars */
+.sp-branches.winner-1 .sp-t-stub:nth-child(2)::after { background: var(--lime); }
+
+/* Winner-2 (right): right half-bar + right stub */
+.sp-branches.winner-2 .sp-t-row::after { background: var(--lime); }
+.sp-branches.winner-2 .sp-t-stub:nth-child(3)::after { background: var(--lime); }
+
+/* Bottom junction: same logic but only at post-select (step 4) */
+.sp-branches:not(.post-select) .sp-t-row-bottom::before,
+.sp-branches:not(.post-select) .sp-t-row-bottom::after,
+.sp-branches:not(.post-select) .sp-t-row-bottom .sp-t-stub::after { background: var(--border) !important; }
+
+.sp-branches.post-select.winner-0 .sp-t-row-bottom::before { background: var(--lime) !important; }
+.sp-branches.post-select.winner-0 .sp-t-row-bottom .sp-t-stub:nth-child(1)::after { background: var(--lime) !important; }
+
+.sp-branches.post-select.winner-1 .sp-t-row-bottom .sp-t-stub:nth-child(2)::after { background: var(--lime) !important; }
+
+.sp-branches.post-select.winner-2 .sp-t-row-bottom::after { background: var(--lime) !important; }
+.sp-branches.post-select.winner-2 .sp-t-row-bottom .sp-t-stub:nth-child(3)::after { background: var(--lime) !important; }
+
+.sp-branch-nodes {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  position: relative;
+  padding: 0 0.25rem;
+}
+
+
+.sp-node-branch {
+  flex: 1;
+  justify-content: center;
+  font-size: 0.77rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 8px;
+}
+
+.sp-branch-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.sp-node-branch.active .sp-branch-dot { background: var(--lime); }
+
+/* Winner branch — highlight strongly */
+.sp-node-branch.winner {
+  border-color: var(--lime) !important;
+  background: rgba(163, 230, 53, 0.15) !important;
+  color: #a3e635 !important;
+  box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.3), 0 0 16px rgba(163, 230, 53, 0.2) !important;
+  animation: sp-winner-glow 0.8s ease-in-out infinite !important;
+  font-weight: 700;
+}
+
+@keyframes sp-winner-glow {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.25), 0 0 12px rgba(163, 230, 53, 0.15); }
+  50%       { box-shadow: 0 0 0 5px rgba(163, 230, 53, 0.4),  0 0 22px rgba(163, 230, 53, 0.3); }
+}
+
+.sp-node-branch.winner .sp-branch-dot { background: #a3e635 !important; }
+
+/* Loser branches — dim out */
+.sp-node-branch.loser {
+  border-color: var(--border) !important;
+  background: var(--surface2) !important;
+  color: var(--muted) !important;
+  opacity: 0.4 !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.sp-winner-check {
+  margin-left: 0.3rem;
+  font-size: 0.75rem;
+  color: #a3e635;
+}
+
+/* Forgery node */
+.sp-node-forgery { margin-top: 0; }
 
 /* ── Result ─────────────────────────────────────────────────────────────────── */
 .scan-result {

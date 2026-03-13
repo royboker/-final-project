@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import Navbar from "../components/Navbar";
@@ -27,17 +27,30 @@ const CONF_COLOR = (c) => {
   return "low";
 };
 
+const BRANCH_LABELS = ["ID Card", "Passport", "Driver License"];
+
 export default function ScanPage() {
   const { token } = useAuth();
   const toast = useToast();
 
-  const [model, setModel] = useState(null);
+  const [model, setModel] = useState("vit");
+
+  useEffect(() => {
+    fetch(`${API_URL}/scans/settings/model`)
+      .then(r => r.json())
+      .then(d => setModel(d.model))
+      .catch(() => setModel("vit"));
+  }, []);
+
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [pipelineStep, setPipelineStep] = useState(0);
+  const [pendingResult, setPendingResult] = useState(null); // holds result during winner reveal
+  const [saveImage, setSaveImage] = useState(true);
 
   const inputRef = useRef(null);
 
@@ -67,20 +80,37 @@ export default function ScanPage() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setPendingResult(null);
 
     try {
       const form = new FormData();
       form.append("file", file);
       form.append("model", model);
+      form.append("save_image", saveImage);
 
-      const res = await fetch(`${API_URL}/scans/classify`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-      });
+      // Wait for API + minimum time to show steps 0-2
+      const [res] = await Promise.all([
+        fetch(`${API_URL}/scans/classify`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: form,
+        }),
+        new Promise((r) => setTimeout(r, 2600)),
+      ]);
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.detail || "Classification failed");
+
+      // Step 3 — highlight winner branch
+      setPendingResult(data);
+      setPipelineStep(3);
+      await new Promise((r) => setTimeout(r, 1300));
+
+      // Step 4 — forgery model
+      setPipelineStep(4);
+      await new Promise((r) => setTimeout(r, 1000));
+
+      // Done — show results
       setResult(data);
       toast({ message: "Document classified successfully", type: "success" });
     } catch (err) {
@@ -92,10 +122,22 @@ export default function ScanPage() {
   };
 
   // ── Download PDF Report ─────────────────────────────────────────────────────
-  const downloadReport = async (scanId) => {
-    const res = await fetch(`${API_URL}/scans/${scanId}/report`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  const downloadReport = async (scanId, imagePrivate) => {
+    let res;
+    if (imagePrivate && file) {
+      // Image was not saved to DB — send the original file so the PDF includes it
+      const form = new FormData();
+      form.append("image_file", file);
+      res = await fetch(`${API_URL}/scans/${scanId}/report`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+    } else {
+      res = await fetch(`${API_URL}/scans/${scanId}/report`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
     if (!res.ok) { toast({ message: "Failed to download report", type: "error" }); return; }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -106,17 +148,30 @@ export default function ScanPage() {
     URL.revokeObjectURL(url);
   };
 
+  // ── Pipeline animation — steps 1 & 2 on timers, 3 & 4 set manually ─────────
+  useEffect(() => {
+    if (!loading) {
+      setPipelineStep(0);
+      setPendingResult(null);
+      return;
+    }
+    const timers = [
+      setTimeout(() => setPipelineStep(1), 800),
+      setTimeout(() => setPipelineStep(2), 1800),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [loading]);
+
   // ── Reset ────────────────────────────────────────────────────────────────────
   const reset = () => {
     setFile(null);
     setPreview(null);
     setResult(null);
     setError(null);
-    setModel(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const canScan = file && model && !loading;
+  const canScan = file && !loading;
   const selectedModel = MODELS.find((m) => m.id === model);
 
   return (
@@ -125,40 +180,20 @@ export default function ScanPage() {
       <div className="scan-page">
         <div className="scan-header">
           <h1>Document Scanner</h1>
-          <p>Upload an identity document and select a model to classify it</p>
+          <p>Upload an identity document to classify it</p>
+          {model && (
+            <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.25rem" }}>
+              AI Model: <span style={{ color: "#a3e635", fontWeight: 600 }}>{model === "vit" ? "ViT — Vision Transformer" : "ResNet-18"}</span>
+            </p>
+          )}
         </div>
 
         <div className="scan-layout">
           {/* ── LEFT PANEL ── */}
           <div className="scan-left">
-            {/* Model selector */}
-            <div className="scan-card">
-              <div className="scan-card-label">01 — Choose AI Model</div>
-              <div className="scan-models">
-                {MODELS.map((m) => (
-                  <button
-                    key={m.id}
-                    className={`scan-model-btn ${m.id} ${model === m.id ? "active" : ""}`}
-                    onClick={() => setModel(m.id)}
-                    disabled={loading}
-                  >
-                    <span className="scan-mdot" />
-                    <span className="scan-model-text">
-                      <span className="scan-model-name">{m.label}</span>
-                      <span className="scan-model-sub">{m.sub}</span>
-                    </span>
-                    {model === m.id && <span className="scan-check">✓</span>}
-                  </button>
-                ))}
-              </div>
-              {selectedModel && (
-                <p className="scan-model-desc">{selectedModel.desc}</p>
-              )}
-            </div>
-
             {/* Upload */}
             <div className="scan-card">
-              <div className="scan-card-label">02 — Upload Document</div>
+              <div className="scan-card-label">01 — Upload Document</div>
               <div
                 className={`scan-dropzone ${dragging ? "drag-over" : ""} ${file ? "has-file" : ""}`}
                 onClick={() => !file && inputRef.current?.click()}
@@ -200,6 +235,26 @@ export default function ScanPage() {
               </div>
             </div>
 
+            {/* Privacy toggle */}
+            <div className="scan-privacy-card">
+              <label className="scan-privacy-toggle">
+                <div className="scan-privacy-info">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                  </svg>
+                  <div>
+                    <span className="scan-privacy-label">Save document image</span>
+                    <span className="scan-privacy-sub">
+                      {saveImage ? "Your document image will be stored in history" : "Only scan results saved — image stays private"}
+                    </span>
+                  </div>
+                </div>
+                <div className={`scan-privacy-switch ${saveImage ? "on" : "off"}`} onClick={() => setSaveImage(v => !v)}>
+                  <div className="scan-privacy-thumb" />
+                </div>
+              </label>
+            </div>
+
             {/* Scan button */}
             <button
               className="scan-submit-btn"
@@ -236,17 +291,81 @@ export default function ScanPage() {
             )}
 
             {loading && (
-              <div className="scan-analyzing">
-                <div className="scan-pulse-ring" />
-                <div className="scan-analyzing-steps">
-                  {["Uploading document", "Preprocessing image", "Running model inference", "Generating result"].map((s, i) => (
-                    <div key={i} className="scan-astep">
-                      <span className="scan-astep-dot" />
-                      <span>{s}</span>
-                    </div>
-                  ))}
+              <div className="scan-pipeline">
+                <p className="scan-pipeline-title">
+                  {pipelineStep >= 3 && pendingResult
+                    ? `Identified: ${pendingResult.predicted}`
+                    : `Analyzing with ${selectedModel?.label}…`}
+                </p>
+
+                {/* Node 1 — Document Image */}
+                <div className={`sp-node sp-node-root ${pipelineStep >= 0 ? "active" : ""}`}>
+                  <div className="sp-node-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+                    </svg>
+                  </div>
+                  <span>Document Image</span>
                 </div>
-                <p className="scan-analyzing-label">Analyzing with {selectedModel?.label}…</p>
+
+                {/* Connector */}
+                <div className={`sp-line ${pipelineStep >= 1 ? "active" : ""}`} />
+
+                {/* Node 2 — Classifier */}
+                <div className={`sp-node sp-node-classifier ${pipelineStep >= 1 ? "active" : ""} ${pipelineStep === 1 ? "pulse" : ""}`}>
+                  <div className="sp-node-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+                    </svg>
+                  </div>
+                  <span>Document Type Classifier</span>
+                </div>
+
+                {/* 3 branches */}
+                <div className={`sp-branches ${pipelineStep >= 2 ? "active" : ""} ${pipelineStep >= 4 ? "post-select" : ""} ${pendingResult && pipelineStep >= 3 ? `winner-${BRANCH_LABELS.indexOf(pendingResult.predicted)}` : ""}`}>
+                  {/* Top T-junction: horizontal bar + 3 vertical stubs */}
+                  <div className="sp-t-row">
+                    <div className="sp-t-stub" /><div className="sp-t-stub" /><div className="sp-t-stub" />
+                  </div>
+
+                  {/* 3 branch nodes */}
+                  <div className="sp-branch-nodes">
+                    {BRANCH_LABELS.map((label, i) => {
+                      const isWinner = pipelineStep >= 3 && pendingResult?.predicted === label;
+                      const isLoser  = pipelineStep >= 3 && pendingResult && pendingResult.predicted !== label;
+                      return (
+                        <div
+                          key={label}
+                          className={`sp-node sp-node-branch
+                            ${pipelineStep >= 2 ? "active" : ""}
+                            ${pipelineStep === 2 ? "pulse" : ""}
+                            ${isWinner ? "winner" : ""}
+                            ${isLoser  ? "loser"  : ""}`}
+                          style={{ animationDelay: `${i * 0.12}s` }}
+                        >
+                          <span className="sp-branch-dot" />
+                          <span>{label}</span>
+                          {isWinner && <span className="sp-winner-check">✓</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bottom T-junction */}
+                  <div className="sp-t-row sp-t-row-bottom">
+                    <div className="sp-t-stub" /><div className="sp-t-stub" /><div className="sp-t-stub" />
+                  </div>
+                </div>
+
+                {/* Node 4 — Forgery Model */}
+                <div className={`sp-node sp-node-forgery ${pipelineStep >= 4 ? "active" : ""} ${pipelineStep === 4 ? "pulse" : ""}`}>
+                  <div className="sp-node-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                  </div>
+                  <span>Forgery Detection Model</span>
+                </div>
               </div>
             )}
 
@@ -327,7 +446,7 @@ export default function ScanPage() {
 
                 <div className="scan-actions">
                   {result.scan_id && (
-                    <button className="scan-download-btn" onClick={() => downloadReport(result.scan_id)}>
+                    <button className="scan-download-btn" onClick={() => downloadReport(result.scan_id, result.image_private)}>
                       ↓ Download Report
                     </button>
                   )}

@@ -27,7 +27,8 @@
   white-space: nowrap;
   margin-bottom: auto;
 }
-.auth-logo span { color: var(--lime); }
+.auth-logo .logo-text { color: var(--white); }
+.auth-logo .logo-text span { color: var(--lime); }
 
 .auth-form-wrap {
   flex: 1;

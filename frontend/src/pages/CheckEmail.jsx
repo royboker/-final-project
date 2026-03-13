@@ -10,7 +10,7 @@ export default function CheckEmail() {
 
       <a className="verify-logo" href="/">
         <LogoIcon />
-        Docu<span>Guard</span>
+        <span className="logo-text">Docu<span>Guard</span></span>
       </a>
 
       <div className="verify-card">

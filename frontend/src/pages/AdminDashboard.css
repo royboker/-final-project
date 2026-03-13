@@ -699,3 +699,94 @@
   transition: background 0.15s;
 }
 .admin-confirm-no:hover { background: #3f3f46; color: #fff; }
+
+/* ── Send Message Modal ─────────────────────────────────────────────────────── */
+.admin-sendmsg-box { min-width: 420px; max-width: 520px; }
+
+.admin-sendmsg-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e4e4e7;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.admin-sendmsg-count {
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(163,230,53,0.12);
+  color: #a3e635;
+  border: 1px solid rgba(163,230,53,0.3);
+  padding: 0.15rem 0.55rem;
+  border-radius: 99px;
+}
+
+.admin-sendmsg-recipients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.admin-sendmsg-chip {
+  background: #27272a;
+  color: #a1a1aa;
+  border: 1px solid #3f3f46;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.admin-sendmsg-textarea {
+  width: 100%;
+  background: #09090f;
+  border: 1px solid #3f3f46;
+  border-radius: 10px;
+  color: #e4e4e7;
+  font-size: 0.875rem;
+  font-family: inherit;
+  padding: 0.75rem;
+  resize: vertical;
+  margin-bottom: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.admin-sendmsg-textarea:focus { border-color: #a3e635; }
+
+/* Send button (green, not red like confirm) */
+.admin-sendmsg-box .admin-confirm-yes {
+  background: #a3e635;
+  color: #09090f;
+}
+.admin-sendmsg-box .admin-confirm-yes:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Send Message toolbar button ─────────────────────────────────────────────── */
+.admin-btn-sendmsg {
+  background: rgba(163,230,53,0.1);
+  color: #a3e635;
+  border: 1px solid rgba(163,230,53,0.35);
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.admin-btn-sendmsg:hover { background: rgba(163,230,53,0.2); }
+
+/* ── Selected row highlight ──────────────────────────────────────────────────── */
+.admin-table tbody tr.row-selected { background: rgba(163,230,53,0.05); }
+
+/* Checkbox styling */
+.admin-table input[type="checkbox"] {
+  accent-color: #a3e635;
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+}

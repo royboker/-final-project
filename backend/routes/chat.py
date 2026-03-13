@@ -4,7 +4,6 @@ from typing import Optional
 from db.mongo import db, users_collection
 from bson import ObjectId
 from jose import jwt, JWTError
-import os
 
 router = APIRouter(tags=["Chat"])
 
@@ -18,40 +17,40 @@ from config import JWT_SECRET, ALGORITHM
 class ConnectionManager:
     def __init__(self):
         self.user_connections: dict[str, WebSocket] = {}
-        self.admin_connections: list[WebSocket] = []
+        self.admin_connections: dict[str, WebSocket] = {}  # admin_id -> ws
 
     async def connect_user(self, user_id: str, ws: WebSocket):
         await ws.accept()
         self.user_connections[user_id] = ws
 
-    async def connect_admin(self, ws: WebSocket):
+    async def connect_admin(self, admin_id: str, ws: WebSocket):
         await ws.accept()
-        self.admin_connections.append(ws)
+        self.admin_connections[admin_id] = ws
 
     def disconnect_user(self, user_id: str):
         self.user_connections.pop(user_id, None)
 
-    def disconnect_admin(self, ws: WebSocket):
-        if ws in self.admin_connections:
-            self.admin_connections.remove(ws)
+    def disconnect_admin(self, admin_id: str):
+        self.admin_connections.pop(admin_id, None)
 
     async def send_to_user(self, user_id: str, data: dict):
-        ws = self.user_connections.get(user_id)
+        ws = self.user_connections.get(user_id) or self.admin_connections.get(user_id)
         if ws:
             try:
                 await ws.send_json(data)
             except Exception:
-                self.disconnect_user(user_id)
+                self.user_connections.pop(user_id, None)
+                self.admin_connections.pop(user_id, None)
 
     async def broadcast_to_admins(self, data: dict):
         disconnected = []
-        for ws in self.admin_connections:
+        for admin_id, ws in list(self.admin_connections.items()):
             try:
                 await ws.send_json(data)
             except Exception:
-                disconnected.append(ws)
-        for ws in disconnected:
-            self.disconnect_admin(ws)
+                disconnected.append(admin_id)
+        for admin_id in disconnected:
+            self.admin_connections.pop(admin_id, None)
 
 
 manager = ConnectionManager()
@@ -219,6 +218,78 @@ def get_all_history(authorization: str = Header(...)):
     return {"sessions": [serialize_session(s) for s in closed]}
 
 
+@router.post("/chat/admin/send")
+async def admin_send_to_user(data: dict, authorization: str = Header(...)):
+    """Admin initiates / sends a message to a specific user."""
+    user = get_current_user(authorization)
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+
+    target_user_id = data.get("user_id")
+    content = (data.get("message") or "").strip()
+    if not target_user_id or not content:
+        raise HTTPException(status_code=400, detail="user_id and message are required")
+    if target_user_id == user["sub"]:
+        raise HTTPException(status_code=400, detail="Cannot send a message to yourself")
+
+    # Resolve user info early to check role
+    try:
+        user_doc = users_collection.find_one({"_id": ObjectId(target_user_id)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user_id")
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user_doc.get("role") == "admin":
+        raise HTTPException(status_code=400, detail="Cannot send messages to admin users")
+
+    # Find or create an active session for the target user
+    session = sessions_col.find_one({"user_id": target_user_id, "status": "active"})
+    is_new_session = session is None
+    if is_new_session:
+        session_doc = {
+            "user_id": target_user_id,
+            "user_name": user_doc.get("name", ""),
+            "user_email": user_doc.get("email", ""),
+            "status": "active",
+            "created_at": datetime.utcnow(),
+            "closed_at": None,
+            "closed_by": None,
+            "unread_user": 0,
+            "unread_admin": 0,
+            "last_message": "",
+        }
+        result = sessions_col.insert_one(session_doc)
+        session_doc["_id"] = result.inserted_id
+        session = session_doc
+
+    session_id = str(session["_id"])
+
+    # Save message
+    msg_doc = {
+        "session_id": session_id,
+        "sender_id": user["sub"],
+        "sender_role": "admin",
+        "content": content,
+        "timestamp": datetime.utcnow(),
+    }
+    result = messages_col.insert_one(msg_doc)
+    msg_doc["_id"] = result.inserted_id
+
+    # Update session: increment unread for user, update last_message
+    sessions_col.update_one(
+        {"_id": session["_id"]},
+        {"$inc": {"unread_user": 1}, "$set": {"last_message": content}},
+    )
+
+    # Notify user via WebSocket if connected
+    await manager.send_to_user(target_user_id, {
+        "type": "message",
+        "message": serialize_message(msg_doc),
+    })
+
+    return {"ok": True, "session_id": session_id}
+
+
 @router.get("/chat/unread")
 def get_unread(authorization: str = Header(...)):
     user = get_current_user(authorization)
@@ -320,7 +391,7 @@ async def admin_ws(websocket: WebSocket, token: str):
         return
 
     admin_id = user["sub"]
-    await manager.connect_admin(websocket)
+    await manager.connect_admin(admin_id, websocket)
 
     try:
         while True:
@@ -399,4 +470,4 @@ async def admin_ws(websocket: WebSocket, token: str):
     except WebSocketDisconnect:
         pass
     finally:
-        manager.disconnect_admin(websocket)
+        manager.disconnect_admin(admin_id)

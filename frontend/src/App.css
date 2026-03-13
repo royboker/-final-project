@@ -1,3 +1,7 @@
+* {
+  font-family: 'Inter', sans-serif;
+}
+
 /* ── Toast Notifications ───────────────────────────────────────────────────── */
 .toast-container {
   position: fixed;
@@ -57,7 +61,10 @@ body.light .nav {
   border-bottom-color: rgba(0,0,0,0.08);
 }
 body.light .logo { color: #0f172a; }
-body.light .logo span { color: #65a30d; }
+body.light .logo .logo-text { color: #0f172a; }
+body.light .logo .logo-text span { color: #65a30d; }
+body.light .footer .logo .logo-text { color: #fff; }
+body.light .footer .logo .logo-text em { color: #a3e635; }
 body.light .btn-ghost { color: #475569; border-color: rgba(0,0,0,0.12); }
 body.light .btn-ghost:hover { color: #0f172a; border-color: #65a30d; }
 body.light .nav-profile { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.1); color: #0f172a; }
@@ -184,7 +191,8 @@ body.light .scan-modal-close:hover { color: #0f172a; }
 body.light .auth-layout { background: #f1f5f9; }
 body.light .auth-left { background: #f8fafc; border-right-color: rgba(0,0,0,0.08); }
 body.light .auth-logo { color: #0f172a; }
-body.light .auth-logo span { color: #65a30d; }
+body.light .auth-logo .logo-text { color: #0f172a; }
+body.light .auth-logo .logo-text span { color: #65a30d; }
 body.light .auth-header h1 { color: #0f172a; }
 body.light .auth-header p { color: #64748b; }
 body.light .auth-back { color: #64748b; border-color: rgba(0,0,0,0.1); }
@@ -222,7 +230,8 @@ body.light .verify-card {
   box-shadow: 0 8px 32px rgba(0,0,0,0.08);
 }
 body.light .verify-logo { color: #0f172a; }
-body.light .verify-logo span { color: #65a30d; }
+body.light .verify-logo .logo-text { color: #0f172a; }
+body.light .verify-logo .logo-text span { color: #65a30d; }
 body.light .verify-card h2 { color: #0f172a; }
 body.light .verify-card p { color: #64748b; }
 body.light .verify-card .auth-field label { color: #475569; }
@@ -275,7 +284,8 @@ body.light .auth-card-badge.red {
 /* ── Verify card text (hardcoded colors override) ───────────────────────────── */
 body.light .verify-card h2 { color: #0f172a; }
 body.light .verify-card p { color: #475569; }
-body.light .verify-logo span { color: #65a30d; }
+body.light .verify-logo .logo-text { color: #0f172a; }
+body.light .verify-logo .logo-text span { color: #65a30d; }
 body.light .verify-glow { background: radial-gradient(circle, rgba(101,163,13,0.06) 0%, transparent 70%); }
 
 /* ── Profile/Admin loading spinner ─────────────────────────────────────────── */

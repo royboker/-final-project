@@ -14,6 +14,7 @@ export default function AdminDashboard() {
   const { adminUnread, clearAdminUnread } = useChat();
   const toast = useToast();
   const [stats, setStats] = useState(null);
+  const [defaultModel, setDefaultModel] = useState("vit");
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -26,6 +27,10 @@ export default function AdminDashboard() {
   const [viewScansUser, setViewScansUser] = useState(null);
   const [viewScanDetail, setViewScanDetail] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null); // { message, onConfirm }
+  const [selectedUsers, setSelectedUsers] = useState(new Set());
+  const [sendMsgModal, setSendMsgModal] = useState(false);
+  const [msgText, setMsgText] = useState("");
+  const [sendingMsg, setSendingMsg] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -59,6 +64,23 @@ export default function AdminDashboard() {
     const interval = setInterval(fetchData, 15000);
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  useEffect(() => {
+    fetch(`${API_URL}/scans/settings/model`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => setDefaultModel(d.model))
+      .catch(() => {});
+  }, [token]);
+
+  const saveDefaultModel = async (model) => {
+    setDefaultModel(model);
+    await fetch(`${API_URL}/scans/settings/model`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model }),
+    });
+    toast({ message: `Default model set to ${model === "vit" ? "ViT" : "ResNet-18"}`, type: "success" });
+  };
 
   useEffect(() => {
     if (tab === "scans") fetchScans();
@@ -101,6 +123,45 @@ export default function AdminDashboard() {
     u.email.toLowerCase().includes(search.toLowerCase())
   );
 
+  function toggleSelectUser(userId) {
+    setSelectedUsers(prev => {
+      const next = new Set(prev);
+      next.has(userId) ? next.delete(userId) : next.add(userId);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    const selectable = filtered.filter(u => u.role !== "admin");
+    if (selectedUsers.size === selectable.length && selectable.length > 0) {
+      setSelectedUsers(new Set());
+    } else {
+      setSelectedUsers(new Set(selectable.map(u => u.id)));
+    }
+  }
+
+  async function sendMessageToSelected() {
+    if (!msgText.trim() || selectedUsers.size === 0) return;
+    setSendingMsg(true);
+    let ok = 0, fail = 0;
+    for (const uid of selectedUsers) {
+      try {
+        const res = await fetch(`${API_URL}/chat/admin/send`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: uid, message: msgText.trim() }),
+        });
+        if (res.ok) ok++; else fail++;
+      } catch { fail++; }
+    }
+    setSendingMsg(false);
+    setSendMsgModal(false);
+    setMsgText("");
+    setSelectedUsers(new Set());
+    if (ok > 0) toast({ message: `Message sent to ${ok} user${ok > 1 ? "s" : ""}`, type: "success" });
+    if (fail > 0) toast({ message: `Failed to send to ${fail} user${fail > 1 ? "s" : ""}`, type: "error" });
+  }
+
   const maxLogins = stats ? Math.max(...stats.chart.map(d => d.logins), 1) : 1;
 
   if (loading) return (
@@ -120,6 +181,41 @@ export default function AdminDashboard() {
             <div className="admin-confirm-actions">
               <button className="admin-confirm-yes" onClick={async () => { await confirmAction.onConfirm(); setConfirmAction(null); }}>Confirm</button>
               <button className="admin-confirm-no" onClick={() => setConfirmAction(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Send Message Modal ── */}
+      {sendMsgModal && (
+        <div className="admin-confirm-overlay" onClick={() => { setSendMsgModal(false); setMsgText(""); }}>
+          <div className="admin-confirm-box admin-sendmsg-box" onClick={e => e.stopPropagation()}>
+            <h3 className="admin-sendmsg-title">
+              Send Message
+              <span className="admin-sendmsg-count">{selectedUsers.size} recipient{selectedUsers.size !== 1 ? "s" : ""}</span>
+            </h3>
+            <div className="admin-sendmsg-recipients">
+              {users.filter(u => selectedUsers.has(u.id)).map(u => (
+                <span key={u.id} className="admin-sendmsg-chip">{u.name}</span>
+              ))}
+            </div>
+            <textarea
+              className="admin-sendmsg-textarea"
+              placeholder="Write your message…"
+              value={msgText}
+              onChange={e => setMsgText(e.target.value)}
+              rows={4}
+              autoFocus
+            />
+            <div className="admin-confirm-actions">
+              <button
+                className="admin-confirm-yes"
+                onClick={sendMessageToSelected}
+                disabled={!msgText.trim() || sendingMsg}
+              >
+                {sendingMsg ? "Sending…" : "Send"}
+              </button>
+              <button className="admin-confirm-no" onClick={() => { setSendMsgModal(false); setMsgText(""); }}>Cancel</button>
             </div>
           </div>
         </div>
@@ -181,6 +277,33 @@ export default function AdminDashboard() {
               <StatCard label="Total Scans" value={stats.total_scans} icon="🔍" color="purple" />
               <StatCard label="Forged Detected" value={stats.forged_scans} icon="⚠️" color="red" />
             </div>
+            <div className="admin-chart-card" style={{ marginBottom: "1rem" }}>
+              <h3>Default AI Model</h3>
+              <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
+                Select which model users will use when scanning documents
+              </p>
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                {[{ id: "vit", label: "ViT", sub: "Vision Transformer" }, { id: "resnet18", label: "ResNet-18", sub: "Residual Network" }].map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => saveDefaultModel(m.id)}
+                    style={{
+                      flex: 1, padding: "0.75rem 1rem", borderRadius: "8px", cursor: "pointer",
+                      border: defaultModel === m.id ? "2px solid #a3e635" : "2px solid var(--border)",
+                      background: defaultModel === m.id ? "rgba(163,230,53,0.08)" : "var(--card)",
+                      color: defaultModel === m.id ? "#a3e635" : "var(--muted)",
+                      fontWeight: defaultModel === m.id ? 700 : 400,
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    <div>{m.label}</div>
+                    <div style={{ fontSize: "0.75rem", opacity: 0.7 }}>{m.sub}</div>
+                    {defaultModel === m.id && <div style={{ fontSize: "0.7rem", marginTop: "0.25rem" }}>✓ Active</div>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="admin-chart-card">
               <h3>Login Activity — Last 7 Days</h3>
               <div className="admin-chart">
@@ -229,6 +352,14 @@ export default function AdminDashboard() {
                 />
               </div>
               <span className="admin-count">{filtered.length} users</span>
+              {selectedUsers.size > 0 && (
+                <button
+                  className="admin-btn-sendmsg"
+                  onClick={() => setSendMsgModal(true)}
+                >
+                  ✉ Send Message ({selectedUsers.size})
+                </button>
+              )}
             </div>
 
             {/* Desktop table */}
@@ -236,6 +367,13 @@ export default function AdminDashboard() {
               <table className="admin-table">
                 <thead>
                   <tr>
+                    <th style={{ width: 36 }}>
+                      <input type="checkbox"
+                        checked={filtered.length > 0 && selectedUsers.size === filtered.length}
+                        onChange={toggleSelectAll}
+                        title="Select all"
+                      />
+                    </th>
                     <th>User</th>
                     <th>Auth</th>
                     <th>Role</th>
@@ -247,7 +385,17 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {filtered.map(u => (
-                    <tr key={u.id}>
+                    <tr key={u.id} className={selectedUsers.has(u.id) ? "row-selected" : ""}>
+                      <td>
+                        {u.role !== "admin" ? (
+                          <input type="checkbox"
+                            checked={selectedUsers.has(u.id)}
+                            onChange={() => toggleSelectUser(u.id)}
+                          />
+                        ) : (
+                          <span title="Cannot message admins" style={{ color: "#52525b", fontSize: "0.75rem" }}>—</span>
+                        )}
+                      </td>
                       <td>
                         <div className="admin-user-cell">
                           <div className="admin-avatar">{u.name?.[0]?.toUpperCase()}</div>
@@ -374,6 +522,7 @@ function AdminMessagesTab({ token }) {
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState([]);
   const [historySession, setHistorySession] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
   const wsRef = useRef(null);
   const activeSessionRef = useRef(null);
   const typingRef = useRef(null);
@@ -514,6 +663,17 @@ function AdminMessagesTab({ token }) {
 
   return (
     <div className="admin-chat-layout">
+      {confirmAction && (
+        <div className="admin-confirm-overlay" onClick={() => setConfirmAction(null)}>
+          <div className="admin-confirm-box" onClick={e => e.stopPropagation()}>
+            <p>{confirmAction.message}</p>
+            <div className="admin-confirm-actions">
+              <button className="admin-confirm-yes" onClick={async () => { await confirmAction.onConfirm(); setConfirmAction(null); }}>Confirm</button>
+              <button className="admin-confirm-no" onClick={() => setConfirmAction(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Session list */}
       <div className="admin-chat-sidebar">
         <div className="admin-chat-sidebar-header">
