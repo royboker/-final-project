@@ -52,7 +52,7 @@ export default function Login() {
       <div className="auth-left">
         <a className="auth-logo" href="/">
           <LogoIcon />
-          Docu<span>Guard</span>
+          <span className="logo-text">Docu<span>Guard</span></span>
         </a>
 
         <div className="auth-form-wrap">

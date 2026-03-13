@@ -1,13 +1,37 @@
 import os
-import resend
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Resend API configuration (works with Render - no SMTP port blocking!)
-resend.api_key = os.getenv("RESEND_API_KEY")
-MAIL_FROM = os.getenv("MAIL_FROM", "DocuGuard <onboarding@resend.dev>")
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+MAIL_FROM_EMAIL = os.getenv("MAIL_FROM_EMAIL", "noamkadosh4444@gmail.com")
+MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME", "DocuGuard")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+BREVO_URL = "https://api.brevo.com/v3/smtp/email"
+
+
+def _send(to_email: str, subject: str, html: str) -> bool:
+    payload = {
+        "sender": {"name": MAIL_FROM_NAME, "email": MAIL_FROM_EMAIL},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "htmlContent": html,
+    }
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json",
+    }
+    try:
+        res = requests.post(BREVO_URL, json=payload, headers=headers, timeout=10)
+        res.raise_for_status()
+        return True
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
+        return False
+
 
 def send_reset_email(to_email: str, token: str, name: str):
     reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
@@ -31,22 +55,12 @@ def send_reset_email(to_email: str, token: str, name: str):
     </div>
     """
 
-    try:
-        params = {
-            "from": MAIL_FROM,
-            "to": [to_email],
-            "subject": "Reset your DocuGuard password",
-            "html": html,
-        }
-        resend.Emails.send(params)
+    ok = _send(to_email, "Reset your DocuGuard password", html)
+    if ok:
         print(f"✅ Reset email sent to {to_email}")
-        return True
-    except Exception as e:
-        print(f"❌ Failed to send reset email: {e}")
-        # Don't raise - let request complete even if email fails
-        return False
+    return ok
 
-        
+
 def send_verification_email(to_email: str, token: str, name: str):
     verify_link = f"{FRONTEND_URL}/verify-email?token={token}"
 
@@ -69,17 +83,7 @@ def send_verification_email(to_email: str, token: str, name: str):
     </div>
     """
 
-    try:
-        params = {
-            "from": MAIL_FROM,
-            "to": [to_email],
-            "subject": "Verify your DocuGuard account",
-            "html": html,
-        }
-        resend.Emails.send(params)
+    ok = _send(to_email, "Verify your DocuGuard account", html)
+    if ok:
         print(f"✅ Verification email sent to {to_email}")
-        return True
-    except Exception as e:
-        print(f"❌ Failed to send email: {e}")
-        # Don't raise - let user register even if email fails
-        return False
+    return ok

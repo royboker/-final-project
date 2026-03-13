@@ -36,7 +36,7 @@ export default function ForgotPassword() {
 
       <a className="verify-logo" href="/">
         <LogoIcon />
-        Docu<span>Guard</span>
+        <span className="logo-text">Docu<span>Guard</span></span>
       </a>
 
       {sent ? (

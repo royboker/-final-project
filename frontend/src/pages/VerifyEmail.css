@@ -38,7 +38,8 @@
   margin-bottom: 2.5rem;
 }
 
-.verify-logo span {
+.verify-logo .logo-text { color: var(--white); }
+.verify-logo .logo-text span {
   color: #a3e635;
 }
 

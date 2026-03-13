@@ -17,7 +17,9 @@ import os
 import random
 import base64
 
-from db.mongo import scans_collection
+from db.mongo import scans_collection, db
+
+settings_col = db["settings"]
 from utils.model_loader import (
     load_vit_model, load_resnet18_model, predict, get_device
 )
@@ -100,6 +102,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 async def classify(
     file: UploadFile = File(...),
     model: str = Form(...),
+    save_image: bool = Form(True),
     user=Depends(get_current_user),
 ):
     # Validate file type
@@ -122,12 +125,26 @@ async def classify(
         result = predict(loaded_model, image, device=device)
         result["demo"] = False
 
-    # Create compressed thumbnail for storage
-    thumb = image.convert("RGB")
-    thumb.thumbnail((400, 400))
-    buf = io.BytesIO()
-    thumb.save(buf, format="JPEG", quality=65)
-    image_b64 = base64.b64encode(buf.getvalue()).decode()
+    # Create thumbnail — real or privacy placeholder
+    if save_image:
+        thumb = image.convert("RGB")
+        thumb.thumbnail((400, 400))
+        buf = io.BytesIO()
+        thumb.save(buf, format="JPEG", quality=65)
+        image_b64 = base64.b64encode(buf.getvalue()).decode()
+    else:
+        # Generate a grey privacy placeholder with lock icon pattern
+        from PIL import ImageDraw
+        placeholder = Image.new("RGB", (400, 300), color=(30, 30, 40))
+        draw = ImageDraw.Draw(placeholder)
+        # Simple lock rectangle
+        cx, cy = 200, 150
+        draw.rounded_rectangle([cx-30, cy-20, cx+30, cy+30], radius=6, fill=(60, 60, 75))
+        draw.arc([cx-18, cy-40, cx+18, cy-10], start=0, end=180, fill=(160, 160, 180), width=6)
+        draw.text((cx, cy+55), "Image Hidden", fill=(100, 100, 120), anchor="mm")
+        buf = io.BytesIO()
+        placeholder.save(buf, format="JPEG", quality=80)
+        image_b64 = base64.b64encode(buf.getvalue()).decode()
 
     # Save scan to DB
     scan = {
@@ -138,6 +155,7 @@ async def classify(
         "confidence": result["confidence"],
         "probabilities": result["probabilities"],
         "image_data": image_b64,
+        "image_private": not save_image,
         "scanned_at": datetime.utcnow(),
     }
     inserted = scans_collection.insert_one(scan)
@@ -149,6 +167,7 @@ async def classify(
         "probabilities": result["probabilities"],
         "model_used": model,
         "demo": result.get("demo", False),
+        "image_private": not save_image,
     }
 
 # ── Request model ─────────────────────────────────────────────────────────────
@@ -216,8 +235,13 @@ def get_scan(scan_id: str, user = Depends(get_current_user)):
     return scan
 
 # ── PDF Report ───────────────────────────────────────────────────────────────
-@router.get("/{scan_id}/report")
-def download_report(scan_id: str, user=Depends(get_current_user)):
+# POST version: accepts optional image file (used when image was not saved to DB)
+@router.post("/{scan_id}/report")
+async def download_report_with_image(
+    scan_id: str,
+    user=Depends(get_current_user),
+    image_file: UploadFile = File(None),
+):
     try:
         oid = ObjectId(scan_id)
     except Exception:
@@ -229,6 +253,22 @@ def download_report(scan_id: str, user=Depends(get_current_user)):
     if scan["user_id"] != user["id"] and user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
+    # If caller provided the original image, use it for the PDF (overrides stored placeholder)
+    if image_file:
+        contents = await image_file.read()
+        try:
+            img = Image.open(io.BytesIO(contents)).convert("RGB")
+            img.thumbnail((400, 400))
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=65)
+            scan["image_data"] = base64.b64encode(buf.getvalue()).decode()
+        except Exception:
+            pass  # fall back to stored image_data
+
+    return _build_pdf_report(scan, scan_id)
+
+
+def _build_pdf_report(scan: dict, scan_id: str) -> StreamingResponse:
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     W, H = A4
@@ -341,6 +381,37 @@ def download_report(scan_id: str, user=Depends(get_current_user)):
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+
+@router.get("/{scan_id}/report")
+def download_report(scan_id: str, user=Depends(get_current_user)):
+    try:
+        oid = ObjectId(scan_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid scan ID")
+    scan = scans_collection.find_one({"_id": oid})
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    if scan["user_id"] != user["id"] and user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    return _build_pdf_report(scan, scan_id)
+
+
+# ── Model settings ───────────────────────────────────────────────────────────
+@router.get("/settings/model")
+def get_default_model():
+    doc = settings_col.find_one({"key": "default_model"})
+    return {"model": doc["value"] if doc else "vit"}
+
+@router.put("/settings/model")
+def set_default_model(data: dict, user=Depends(get_current_user)):
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    model = data.get("model", "vit")
+    if model not in ["vit", "resnet18"]:
+        raise HTTPException(status_code=400, detail="Invalid model")
+    settings_col.update_one({"key": "default_model"}, {"$set": {"value": model}}, upsert=True)
+    return {"model": model}
 
 # ── Delete all my scans ───────────────────────────────────────────────────────
 @router.delete("/my/all")

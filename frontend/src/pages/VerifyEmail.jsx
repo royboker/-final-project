@@ -57,7 +57,7 @@ export default function VerifyEmail() {
 
       <Link className="verify-logo" to="/">
         <LogoIcon />
-        Docu<span>Guard</span>
+        <span className="logo-text">Docu<span>Guard</span></span>
       </Link>
 
       <div className="verify-card">
