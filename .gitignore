@@ -1,15 +1,4 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
+
 # Python lib directories (not frontend/src/lib!)
 backend/lib/
 lib64/
@@ -68,18 +57,6 @@ datasets/idnet/WV/
 *.tiff
 
 
-# Results with large files
-results/models/
-results/logs/
-results/checkpoints/
-
-# Notebooks
-notebooks/
-
 # Keep only small files
-!datasets/README.md
-!datasets/examples/README.md
-!datasets/idnet/README.md
-!datasets/idnet/document_type_classification/README.md
 !datasets/idnet/*.csv
 !datasets/idnet/document_type_classification/data/*.csv
