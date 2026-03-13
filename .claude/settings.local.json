@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(py -c \":*)"
+      "Bash(py -c \":*)",
+      "Bash(source:*)",
+      "Bash(python:*)",
+      "Bash(file:*)",
+      "Bash(ls:*)"
     ]
   }
 }
