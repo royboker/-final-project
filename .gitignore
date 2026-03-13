@@ -44,6 +44,9 @@ ENV/
 ehthumbs.db
 Thumbs.db
 
+# Logs
+*.log
+logs/
 
 # Environment files - IMPORTANT: Never commit secrets!
 .env
@@ -63,7 +66,6 @@ datasets/idnet/WV/
 *.gif
 *.bmp
 *.tiff
-
 
 
 # Results with large files
