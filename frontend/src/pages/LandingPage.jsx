@@ -1,10 +1,52 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import ScanDemo from "../components/ScanDemo";
 import "./LandingPage.css";
 
+import { API_URL } from "../config.js";
 
+
+
+// ── Animated Counter ──────────────────────────────────────────────────────────
+function AnimatedCounter({ value, duration = 1500 }) {
+  const [display, setDisplay] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || value === 0) return;
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true;
+          const start = performance.now();
+          function tick(now) {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+            setDisplay(Math.round(eased * value));
+            if (progress < 1) requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [value, duration]);
+
+  // Reset if value changes
+  useEffect(() => {
+    started.current = false;
+    setDisplay(0);
+  }, [value]);
+
+  return <span ref={ref}>{display.toLocaleString()}</span>;
+}
 
 // ── Custom Hook ───────────────────────────────────────────────────────────────
 function useReveal() {
@@ -27,57 +69,45 @@ function useReveal() {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const STATS = [
-  { num: "10K+",  label: "Registered users" },
-  { num: "50M+",  label: "Documents scanned" },
-  { num: "99.9%", label: "Uptime SLA" },
-  { num: "98%",   label: "Detection accuracy" },
-];
-
 const FILE_TYPES = ["PDF", "DOCX", "PNG", "JPG", "TIFF"];
 
 const FEATURES = [
   {
-    title: "Document Type Classification",
-    desc: "Automatically identifies whether the uploaded document is an ID Card, Passport, or Driver License before running forgery detection.",
+    title: "3 Document Types",
+    desc: "Supports ID Cards, Passports, and Driver Licenses — the most common identity documents worldwide.",
     icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></>,
   },
   {
-    title: "Dual AI Models (ViT & ResNet-18)",
-    desc: "Two deep learning models  Vision Transformer (ViT) and ResNet-18 analyze each document and return Authentic vs. Forged with a confidence score.",
-    icon: <><circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></>,
-  },
-  {
-    title: "Smart Preprocessing",
-    desc: "Each image is automatically cropped, aligned, resized, normalized, and denoised to maximize model accuracy before classification.",
-    icon: <><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" /></>,
-  },
-  {
-    title: "Multi-Document & Multi-Country",
-    desc: "Supports ID Cards, Passports, and Driver Licenses from 9 countries including GRC, RUS, LVA, SVK, AZ, ALB and more.",
+    title: "9+ Countries",
+    desc: "Works with documents from Greece, Russia, Latvia, Slovakia, Azerbaijan, Albania, and more.",
     icon: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" /></>,
   },
   {
-    title: "Trained on IDNET Dataset",
-    desc: "9,000 balanced images — 3,000 per document type   ensuring fair and accurate detection across all document categories.",
-    icon: <><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></>,
+    title: "AI-Powered Detection",
+    desc: "Advanced deep learning models trained on thousands of real and forged documents to spot forgeries with high accuracy.",
+    icon: <><circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></>,
   },
   {
-    title: "Scan History & Audit Logs",
-    desc: "Every scan is stored in MongoDB Atlas with document type, forgery result, confidence score, and timestamp for full traceability.",
-    icon: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></>,
+    title: "Instant Results",
+    desc: "Get a clear verdict — Authentic or Forged — with a confidence score in just a few seconds.",
+    icon: <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></>,
+  },
+  {
+    title: "Forgery Type Analysis",
+    desc: "When a fake is detected, the system identifies the fraud method — face morphing or face replacement.",
+    icon: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></>,
+  },
+  {
+    title: "PDF Reports",
+    desc: "Download a detailed report for every scan with the full analysis breakdown and confidence scores.",
+    icon: <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></>,
   },
 ];
 
 const STEPS = [
-  { num: "01", title: "Create Account",  desc: "Register with your email or Google account and verify your identity" },
-  { num: "02", title: "Login",           desc: "Sign in to your DocuGuard account to access the platform" },
-  { num: "03", title: "Upload Document", desc: "Upload a photo of an ID card, Passport, or Driver License" },
-  { num: "04", title: "Choose Model",    desc: "Select an AI model — Vision Transformer (ViT) or ResNet-18" },
-  { num: "05", title: "Run Scan",        desc: "Click Scan and let the AI analyze your document in seconds" },
-  { num: "06", title: "View Result",     desc: "Get an instant verdict: Authentic or Forged with a confidence score" },
-  { num: "07", title: "Download Report", desc: "Export a full PDF report with the scan details and results" },
-  { num: "08", title: "Scan History",    desc: "Access all your previous scans anytime from your profile" },
+  { num: "01", title: "Upload",  desc: "Take a photo or upload an image of your identity document" },
+  { num: "02", title: "Analyze", desc: "Our AI instantly checks if the document is authentic or forged" },
+  { num: "03", title: "Results", desc: "Get a clear verdict with a detailed report you can download" },
 ];
 
 const ROLES = [
@@ -124,10 +154,21 @@ const DocCard = ({ className, badge, badgeCls = "" }) => (
 // ── Page Component ────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { isAuthed } = useAuth();
 
-  const token = localStorage.getItem("token");
-const user = JSON.parse(localStorage.getItem("user") || "null");
-const isAuthed = Boolean(token);
+  // Redirect logged-in users to dashboard
+  useEffect(() => {
+    if (isAuthed) navigate("/dashboard", { replace: true });
+  }, [isAuthed, navigate]);
+
+  // Fetch real stats from API
+  const [stats, setStats] = useState({ total_users: 0, total_scans: 0, forged: 0, authentic: 0 });
+  useEffect(() => {
+    fetch(`${API_URL}/scans/public/stats`)
+      .then(r => r.json())
+      .then(d => setStats(d))
+      .catch(() => {});
+  }, []);
 
   const statsRef    = useReveal();
   const featuresRef = useReveal();
@@ -193,12 +234,22 @@ const isAuthed = Boolean(token);
 
       {/* STATS */}
       <div className="stats reveal-block" ref={statsRef}>
-        {STATS.map(s => (
-          <div className="stat" key={s.label}>
-            <div className="stat-num">{s.num}</div>
-            <div className="stat-label">{s.label}</div>
-          </div>
-        ))}
+        <div className="stat">
+          <div className="stat-num"><AnimatedCounter value={stats.total_users} /></div>
+          <div className="stat-label">Registered Users</div>
+        </div>
+        <div className="stat">
+          <div className="stat-num"><AnimatedCounter value={stats.total_scans} /></div>
+          <div className="stat-label">Documents Scanned</div>
+        </div>
+        <div className="stat">
+          <div className="stat-num"><AnimatedCounter value={stats.authentic} /></div>
+          <div className="stat-label">Authentic</div>
+        </div>
+        <div className="stat">
+          <div className="stat-num"><AnimatedCounter value={stats.forged} /></div>
+          <div className="stat-label">Forged Detected</div>
+        </div>
       </div>
 
 {isAuthed && (
@@ -223,8 +274,8 @@ const isAuthed = Boolean(token);
 
       {/* FEATURES */}
       <section className="section" id="features">
-        <h2 className="section-title">Everything you need</h2>
-        <p className="section-sub">A complete platform for managing, analyzing, and verifying documents</p>
+        <h2 className="section-title">What we offer</h2>
+        <p className="section-sub">Verify identity documents from multiple countries in seconds</p>
 
         <div className="features-grid reveal-block" ref={featuresRef}>
           {FEATURES.map(f => (
@@ -243,7 +294,7 @@ const isAuthed = Boolean(token);
       <div className="flow-section" id="how-it-works">
         <div className="section">
           <h2 className="section-title">How it works</h2>
-          <p className="section-sub">{STEPS.length} simple steps — from registration to result</p>
+          <p className="section-sub">Verify any document in seconds — it's that simple</p>
 
           <div className="flow-steps reveal-block" ref={flowRef}>
             {STEPS.map(s => (
@@ -293,7 +344,7 @@ const isAuthed = Boolean(token);
       {/* FOOTER */}
       <footer className="footer">
         <a className="logo" href="/"><span className="logo-text">Docu<em>Guard</em></span></a>
-        <p>© 2025 DocuGuard — All rights reserved</p>
+        <p>© 2026 DocuGuard — All rights reserved</p>
         <div className="footer-links">
           <a href="#" className="btn-ghost">Privacy</a>
           <a href="#" className="btn-ghost">Terms</a>

@@ -41,7 +41,7 @@ export default function VerifyEmail() {
         setStatus("success");
 
         timerId = setTimeout(() => {
-          navigate("/", { replace: true });
+          navigate("/dashboard", { replace: true });
         }, 2500);
       })
       .catch(() => setStatus("error"));

@@ -5,7 +5,8 @@
       "Bash(source:*)",
       "Bash(python:*)",
       "Bash(file:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(find:*)"
     ]
   }
 }
