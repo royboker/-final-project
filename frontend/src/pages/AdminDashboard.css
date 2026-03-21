@@ -42,10 +42,11 @@
 
 /* ── Stats ── */
 .admin-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-.admin-stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 1.25rem 1rem; display: flex; flex-direction: column; gap: 0.4rem; transition: border-color 0.2s; }
+.admin-stats-grid.admin-stats-wide { grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 2.5rem; }
+.admin-stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 1.5rem 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; transition: border-color 0.2s; }
 .admin-stat-card:hover { border-color: rgba(255,255,255,0.15); }
 .admin-stat-icon { font-size: 1.3rem; }
-.admin-stat-value { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; color: #fff; }
+.admin-stat-value { font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800; color: #fff; }
 .admin-stat-label { font-size: 0.75rem; color: #71717a; }
 .admin-stat-card.color-lime .admin-stat-value { color: #a3e635; }
 .admin-stat-card.color-blue .admin-stat-value { color: #60a5fa; }
@@ -55,9 +56,10 @@
 .admin-stat-card.color-red .admin-stat-value { color: #f87171; }
 
 /* ── Chart ── */
-.admin-chart-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 1.5rem; }
-.admin-chart-card h3 { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; color: #fff; margin: 0 0 1.5rem; }
+.admin-chart-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 1.75rem; }
+.admin-chart-card h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0 0 1.5rem; }
 .admin-chart { display: flex; align-items: flex-end; gap: 0.75rem; height: 140px; }
+.admin-chart-wide .admin-chart { height: 220px; }
 .admin-chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; gap: 0.4rem; }
 .admin-chart-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
 .admin-chart-bar { width: 100%; background: rgba(163,230,53,0.2); border: 1px solid rgba(163,230,53,0.4); border-radius: 4px 4px 0 0; min-height: 4px; position: relative; transition: background 0.2s; display: flex; align-items: flex-start; justify-content: center; }
@@ -123,8 +125,9 @@
   .admin-topbar { flex-direction: column; gap: 0.75rem; }
   .admin-topbar h1 { font-size: 1.2rem; }
   .admin-live { align-self: flex-start; }
-  .admin-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-stats-grid, .admin-stats-grid.admin-stats-wide { grid-template-columns: repeat(2, 1fr); }
   .admin-chart { height: 100px; }
+  .admin-chart-wide .admin-chart { height: 140px; }
   .admin-toolbar { flex-direction: column; align-items: stretch; }
   .admin-search-wrap { max-width: 100%; }
 
@@ -789,4 +792,48 @@
   cursor: pointer;
   width: 15px;
   height: 15px;
+}
+
+/* ── Models tab ── */
+.admin-models-tab { max-width: 700px; }
+
+.admin-model-list { display: flex; flex-direction: column; gap: 0; }
+
+.admin-model-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.admin-model-row:last-child { border-bottom: none; }
+
+.admin-model-name {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.admin-model-type {
+  font-size: 0.82rem;
+  color: #71717a;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.admin-model-classes {
+  font-size: 0.78rem;
+  color: #71717a;
+}
+
+.admin-model-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #a3e635;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(163,230,53,0.1);
 }

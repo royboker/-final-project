@@ -6,21 +6,6 @@ import "./ScanPage.css";
 
 import { API_URL } from "../config.js";
 
-const MODELS = [
-  {
-    id: "vit",
-    label: "ViT",
-    sub: "Vision Transformer",
-    desc: "Transformer-based model. Excellent at capturing global document structure.",
-  },
-  {
-    id: "resnet18",
-    label: "ResNet-18",
-    sub: "Residual Network",
-    desc: "CNN-based model. Fast and accurate for local feature extraction.",
-  },
-];
-
 const CONF_COLOR = (c) => {
   if (c >= 0.8) return "high";
   if (c >= 0.55) return "mid";
@@ -33,15 +18,6 @@ export default function ScanPage() {
   const { token } = useAuth();
   const toast = useToast();
 
-  const [model, setModel] = useState("vit");
-
-  useEffect(() => {
-    fetch(`${API_URL}/scans/settings/model`)
-      .then(r => r.json())
-      .then(d => setModel(d.model))
-      .catch(() => setModel("vit"));
-  }, []);
-
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [dragging, setDragging] = useState(false);
@@ -49,7 +25,7 @@ export default function ScanPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [pipelineStep, setPipelineStep] = useState(0);
-  const [pendingResult, setPendingResult] = useState(null); // holds result during winner reveal
+  const [pendingResult, setPendingResult] = useState(null);
   const [saveImage, setSaveImage] = useState(true);
 
   const inputRef = useRef(null);
@@ -74,9 +50,9 @@ export default function ScanPage() {
     handleFile(e.dataTransfer.files[0]);
   };
 
-  // ── Classify ────────────────────────────────────────────────────────────────
-  const classify = async () => {
-    if (!file || !model) return;
+  // ── Analyze (full pipeline) ───────────────────────────────────────────────
+  const analyze = async () => {
+    if (!file) return;
     setLoading(true);
     setError(null);
     setResult(null);
@@ -85,12 +61,11 @@ export default function ScanPage() {
     try {
       const form = new FormData();
       form.append("file", file);
-      form.append("model", model);
       form.append("save_image", saveImage);
 
       // Wait for API + minimum time to show steps 0-2
       const [res] = await Promise.all([
-        fetch(`${API_URL}/scans/classify`, {
+        fetch(`${API_URL}/scans/analyze`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: form,
@@ -99,20 +74,26 @@ export default function ScanPage() {
       ]);
 
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || "Classification failed");
+      if (!res.ok) throw new Error(data.detail || "Analysis failed");
 
-      // Step 3 — highlight winner branch
+      // Step 3 — highlight winner branch (doc type result)
       setPendingResult(data);
       setPipelineStep(3);
       await new Promise((r) => setTimeout(r, 1300));
 
-      // Step 4 — forgery model
+      // Step 4 — binary forgery model
       setPipelineStep(4);
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 1200));
+
+      // Step 5 — fraud type (if applicable)
+      if (data.binary?.predicted === "Fake" && data.fraud_type) {
+        setPipelineStep(5);
+        await new Promise((r) => setTimeout(r, 1000));
+      }
 
       // Done — show results
       setResult(data);
-      toast({ message: "Document classified successfully", type: "success" });
+      toast({ message: "Document analysis complete", type: "success" });
     } catch (err) {
       setError(err.message);
       toast({ message: err.message, type: "error" });
@@ -125,7 +106,6 @@ export default function ScanPage() {
   const downloadReport = async (scanId, imagePrivate) => {
     let res;
     if (imagePrivate && file) {
-      // Image was not saved to DB — send the original file so the PDF includes it
       const form = new FormData();
       form.append("image_file", file);
       res = await fetch(`${API_URL}/scans/${scanId}/report`, {
@@ -148,7 +128,7 @@ export default function ScanPage() {
     URL.revokeObjectURL(url);
   };
 
-  // ── Pipeline animation — steps 1 & 2 on timers, 3 & 4 set manually ─────────
+  // ── Pipeline animation — steps 1 & 2 on timers, 3+ set manually ──────────
   useEffect(() => {
     if (!loading) {
       setPipelineStep(0);
@@ -172,7 +152,18 @@ export default function ScanPage() {
   };
 
   const canScan = file && !loading;
-  const selectedModel = MODELS.find((m) => m.id === model);
+
+  // Derive pipeline status text
+  const getPipelineTitle = () => {
+    if (pipelineStep >= 5 && pendingResult) return "Fraud type identified";
+    if (pipelineStep >= 4 && pendingResult?.binary) {
+      return pendingResult.binary.predicted === "Fake"
+        ? "Forgery detected — analyzing fraud type..."
+        : `Document is authentic`;
+    }
+    if (pipelineStep >= 3 && pendingResult) return `Identified: ${pendingResult.doc_type?.predicted} — checking forgery...`;
+    return "Analyzing document...";
+  };
 
   return (
     <>
@@ -180,12 +171,7 @@ export default function ScanPage() {
       <div className="scan-page">
         <div className="scan-header">
           <h1>Document Scanner</h1>
-          <p>Upload an identity document to classify it</p>
-          {model && (
-            <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.25rem" }}>
-              AI Model: <span style={{ color: "#a3e635", fontWeight: 600 }}>{model === "vit" ? "ViT — Vision Transformer" : "ResNet-18"}</span>
-            </p>
-          )}
+          <p>Upload an identity document for full analysis</p>
         </div>
 
         <div className="scan-layout">
@@ -216,7 +202,7 @@ export default function ScanPage() {
                       </svg>
                     </div>
                     <p className="scan-drop-title">Drag & drop or click to upload</p>
-                    <p className="scan-drop-sub">JPG, PNG, WEBP · max 10 MB</p>
+                    <p className="scan-drop-sub">JPG, PNG, WEBP</p>
                   </>
                 ) : (
                   <div className="scan-file-preview">
@@ -258,11 +244,11 @@ export default function ScanPage() {
             {/* Scan button */}
             <button
               className="scan-submit-btn"
-              onClick={classify}
+              onClick={analyze}
               disabled={!canScan}
             >
               {loading ? (
-                <><span className="scan-spinner" /> Analyzing…</>
+                <><span className="scan-spinner" /> Analyzing...</>
               ) : (
                 <> Scan Document</>
               )}
@@ -286,17 +272,13 @@ export default function ScanPage() {
                   </svg>
                 </div>
                 <p className="scan-empty-title">Results will appear here</p>
-                <p className="scan-empty-sub">Select a model and upload a document to get started</p>
+                <p className="scan-empty-sub">Upload a document to get started with full analysis</p>
               </div>
             )}
 
             {loading && (
               <div className="scan-pipeline">
-                <p className="scan-pipeline-title">
-                  {pipelineStep >= 3 && pendingResult
-                    ? `Identified: ${pendingResult.predicted}`
-                    : `Analyzing with ${selectedModel?.label}…`}
-                </p>
+                <p className="scan-pipeline-title">{getPipelineTitle()}</p>
 
                 {/* Node 1 — Document Image */}
                 <div className={`sp-node sp-node-root ${pipelineStep >= 0 ? "active" : ""}`}>
@@ -311,7 +293,7 @@ export default function ScanPage() {
                 {/* Connector */}
                 <div className={`sp-line ${pipelineStep >= 1 ? "active" : ""}`} />
 
-                {/* Node 2 — Classifier */}
+                {/* Node 2 — Doc Type Classifier */}
                 <div className={`sp-node sp-node-classifier ${pipelineStep >= 1 ? "active" : ""} ${pipelineStep === 1 ? "pulse" : ""}`}>
                   <div className="sp-node-icon">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -319,11 +301,12 @@ export default function ScanPage() {
                     </svg>
                   </div>
                   <span>Document Type Classifier</span>
+                  <span className="sp-stage-badge">Stage 1</span>
                 </div>
 
                 {/* 3 branches */}
-                <div className={`sp-branches ${pipelineStep >= 2 ? "active" : ""} ${pipelineStep >= 4 ? "post-select" : ""} ${pendingResult && pipelineStep >= 3 ? `winner-${BRANCH_LABELS.indexOf(pendingResult.predicted)}` : ""}`}>
-                  {/* Top T-junction: horizontal bar + 3 vertical stubs */}
+                <div className={`sp-branches ${pipelineStep >= 2 ? "active" : ""} ${pipelineStep >= 4 ? "post-select" : ""} ${pendingResult && pipelineStep >= 3 ? `winner-${BRANCH_LABELS.indexOf(pendingResult.doc_type?.predicted)}` : ""}`}>
+                  {/* Top T-junction */}
                   <div className="sp-t-row">
                     <div className="sp-t-stub" /><div className="sp-t-stub" /><div className="sp-t-stub" />
                   </div>
@@ -331,8 +314,8 @@ export default function ScanPage() {
                   {/* 3 branch nodes */}
                   <div className="sp-branch-nodes">
                     {BRANCH_LABELS.map((label, i) => {
-                      const isWinner = pipelineStep >= 3 && pendingResult?.predicted === label;
-                      const isLoser  = pipelineStep >= 3 && pendingResult && pendingResult.predicted !== label;
+                      const isWinner = pipelineStep >= 3 && pendingResult?.doc_type?.predicted === label;
+                      const isLoser  = pipelineStep >= 3 && pendingResult && pendingResult.doc_type?.predicted !== label;
                       return (
                         <div
                           key={label}
@@ -357,15 +340,45 @@ export default function ScanPage() {
                   </div>
                 </div>
 
-                {/* Node 4 — Forgery Model */}
-                <div className={`sp-node sp-node-forgery ${pipelineStep >= 4 ? "active" : ""} ${pipelineStep === 4 ? "pulse" : ""}`}>
+                {/* Connector to binary */}
+                <div className={`sp-line ${pipelineStep >= 4 ? "active" : ""}`} />
+
+                {/* Node — Binary Forgery Detection */}
+                <div className={`sp-node sp-node-binary ${pipelineStep >= 4 ? "active" : ""} ${pipelineStep === 4 && !pendingResult?.binary ? "pulse" : ""} ${pendingResult?.binary?.predicted === "Real" ? "sp-real" : ""} ${pendingResult?.binary?.predicted === "Fake" ? "sp-fake" : ""}`}>
                   <div className="sp-node-icon">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                     </svg>
                   </div>
-                  <span>Forgery Detection Model</span>
+                  <span>Forgery Detection</span>
+                  <span className="sp-stage-badge">Stage 2</span>
+                  {pipelineStep >= 4 && pendingResult?.binary && (
+                    <span className={`sp-verdict-chip ${pendingResult.binary.predicted === "Real" ? "real" : "fake"}`}>
+                      {pendingResult.binary.predicted} ({(pendingResult.binary.confidence * 100).toFixed(0)}%)
+                    </span>
+                  )}
                 </div>
+
+                {/* Fraud type section (only if Fake) */}
+                {pendingResult?.binary?.predicted === "Fake" && (
+                  <>
+                    <div className={`sp-line ${pipelineStep >= 5 ? "active" : ""}`} />
+                    <div className={`sp-node sp-node-fraud ${pipelineStep >= 5 ? "active" : ""} ${pipelineStep === 5 ? "pulse" : ""}`}>
+                      <div className="sp-node-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                      </div>
+                      <span>Fraud Type Analysis</span>
+                      <span className="sp-stage-badge">Stage 3</span>
+                      {pipelineStep >= 5 && pendingResult?.fraud_type && (
+                        <span className="sp-fraud-chip">
+                          {pendingResult.fraud_type.predicted === "face_morphing" ? "Face Morphing" : "Face Replacement"}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -374,68 +387,135 @@ export default function ScanPage() {
                 {/* Demo banner */}
                 {result.demo && (
                   <div className="scan-demo-banner">
-                    Demo mode — model file not loaded yet. Results are simulated.
+                    Demo mode — model files not loaded. Results are simulated.
                   </div>
                 )}
 
                 {/* Verdict banner */}
-                <div className="scan-verdict">
-                  <div className="scan-verdict-icon">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
+                <div className={`scan-verdict ${result.verdict === "Real" ? "verdict-real" : result.verdict?.startsWith("Fake") ? "verdict-fake" : ""}`}>
+                  <div className={`scan-verdict-icon ${result.verdict === "Real" ? "icon-real" : result.verdict?.startsWith("Fake") ? "icon-fake" : ""}`}>
+                    {result.verdict === "Real" ? (
+                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : result.verdict?.startsWith("Fake") ? (
+                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
                   </div>
                   <div>
-                    <div className="scan-verdict-label">Document Identified</div>
-                    <div className="scan-verdict-type">{result.predicted}</div>
+                    <div className="scan-verdict-label">Verdict</div>
+                    <div className="scan-verdict-type">{result.verdict || "Classification only"}</div>
                   </div>
-                  <div className={`scan-verdict-badge ${result.model_used}`}>
-                    {selectedModel?.label}
-                  </div>
+                  <div className="scan-verdict-badge pipeline">Pipeline</div>
                 </div>
 
-                {/* Confidence */}
-                <div className="scan-conf-card">
-                  <div className="scan-conf-header">
-                    <span>Confidence Score</span>
-                    <span className={`scan-conf-val ${CONF_COLOR(result.confidence)}`}>
-                      {(result.confidence * 100).toFixed(1)}%
-                    </span>
+                {/* Document Type */}
+                {result.doc_type && (
+                  <div className="scan-stage-card">
+                    <div className="scan-stage-header">
+                      <span className="scan-stage-num">Stage 1</span>
+                      <span className="scan-stage-name">Document Type</span>
+                      <span className={`scan-conf-val ${CONF_COLOR(result.doc_type.confidence)}`}>
+                        {(result.doc_type.confidence * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="scan-stage-result">{result.doc_type.predicted}</div>
+                    <div className="scan-probs">
+                      {Object.entries(result.doc_type.probabilities)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([label, prob]) => (
+                          <div key={label} className={`scan-prob-row ${label === result.doc_type.predicted ? "top" : ""}`}>
+                            <span className="scan-prob-name">
+                              {label === result.doc_type.predicted && <span className="scan-prob-check">✓</span>}
+                              {label}
+                            </span>
+                            <div className="scan-prob-bar-wrap">
+                              <div className="scan-prob-bar" style={{ width: `${(prob * 100).toFixed(1)}%` }} />
+                            </div>
+                            <span className="scan-prob-pct">{(prob * 100).toFixed(1)}%</span>
+                          </div>
+                        ))}
+                    </div>
                   </div>
-                  <div className="scan-conf-track">
-                    <div
-                      className={`scan-conf-fill ${CONF_COLOR(result.confidence)}`}
-                      style={{ width: `${(result.confidence * 100).toFixed(1)}%` }}
-                    />
-                  </div>
-                </div>
+                )}
 
-                {/* Probability breakdown */}
-                <div className="scan-probs">
-                  <div className="scan-probs-label">Probability Distribution</div>
-                  {Object.entries(result.probabilities)
-                    .sort(([, a], [, b]) => b - a)
-                    .map(([label, prob]) => (
-                      <div key={label} className={`scan-prob-row ${label === result.predicted ? "top" : ""}`}>
-                        <span className="scan-prob-name">
-                          {label === result.predicted && <span className="scan-prob-check">✓</span>}
-                          {label}
-                        </span>
-                        <div className="scan-prob-bar-wrap">
-                          <div className="scan-prob-bar" style={{ width: `${(prob * 100).toFixed(1)}%` }} />
-                        </div>
-                        <span className="scan-prob-pct">{(prob * 100).toFixed(1)}%</span>
-                      </div>
-                    ))}
-                </div>
+                {/* Binary Result */}
+                {result.binary && (
+                  <div className={`scan-stage-card ${result.binary.predicted === "Real" ? "stage-real" : "stage-fake"}`}>
+                    <div className="scan-stage-header">
+                      <span className="scan-stage-num">Stage 2</span>
+                      <span className="scan-stage-name">Forgery Detection</span>
+                      <span className={`scan-conf-val ${CONF_COLOR(result.binary.confidence)}`}>
+                        {(result.binary.confidence * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className={`scan-stage-result ${result.binary.predicted === "Real" ? "text-real" : "text-fake"}`}>
+                      {result.binary.predicted}
+                    </div>
+                    <div className="scan-probs">
+                      {Object.entries(result.binary.probabilities)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([label, prob]) => (
+                          <div key={label} className={`scan-prob-row ${label === result.binary.predicted ? "top" : ""}`}>
+                            <span className="scan-prob-name">
+                              {label === result.binary.predicted && <span className="scan-prob-check">✓</span>}
+                              {label}
+                            </span>
+                            <div className="scan-prob-bar-wrap">
+                              <div className={`scan-prob-bar ${label === "Fake" && label === result.binary.predicted ? "bar-fake" : ""}`} style={{ width: `${(prob * 100).toFixed(1)}%` }} />
+                            </div>
+                            <span className="scan-prob-pct">{(prob * 100).toFixed(1)}%</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Fraud Type Result */}
+                {result.fraud_type && (
+                  <div className="scan-stage-card stage-fraud">
+                    <div className="scan-stage-header">
+                      <span className="scan-stage-num">Stage 3</span>
+                      <span className="scan-stage-name">Fraud Type</span>
+                      <span className={`scan-conf-val ${CONF_COLOR(result.fraud_type.confidence)}`}>
+                        {(result.fraud_type.confidence * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="scan-stage-result text-fraud">
+                      {result.fraud_type.predicted === "face_morphing" ? "Face Morphing" : "Face Replacement"}
+                    </div>
+                    <div className="scan-probs">
+                      {Object.entries(result.fraud_type.probabilities)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([label, prob]) => (
+                          <div key={label} className={`scan-prob-row ${label === result.fraud_type.predicted ? "top" : ""}`}>
+                            <span className="scan-prob-name">
+                              {label === result.fraud_type.predicted && <span className="scan-prob-check">✓</span>}
+                              {label === "face_morphing" ? "Face Morphing" : "Face Replacement"}
+                            </span>
+                            <div className="scan-prob-bar-wrap">
+                              <div className="scan-prob-bar bar-fraud" style={{ width: `${(prob * 100).toFixed(1)}%` }} />
+                            </div>
+                            <span className="scan-prob-pct">{(prob * 100).toFixed(1)}%</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Meta */}
                 <div className="scan-meta-grid">
                   {[
-                    { label: "Document", value: result.predicted },
-                    { label: "Model", value: selectedModel?.label, cls: result.model_used },
-                    { label: "Confidence", value: `${(result.confidence * 100).toFixed(1)}%` },
-                    { label: "Status", value: "Classified", cls: "ok" },
+                    { label: "Document", value: result.doc_type?.predicted },
+                    { label: "Verdict", value: result.verdict, cls: result.verdict === "Real" ? "real" : result.verdict?.startsWith("Fake") ? "fake" : "ok" },
+                    { label: "Stages", value: `${result.stages_completed?.length || 0} / 3` },
+                    { label: "Status", value: "Complete", cls: "ok" },
                   ].map((item) => (
                     <div className="scan-meta-card" key={item.label}>
                       <span className="scan-meta-lbl">{item.label}</span>

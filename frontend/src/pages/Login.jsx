@@ -38,7 +38,7 @@ export default function Login() {
       });
 
       setSession(res.token, res.user);
-      navigate("/");
+      navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {

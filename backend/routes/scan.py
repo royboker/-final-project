@@ -17,11 +17,14 @@ import os
 import random
 import base64
 
-from db.mongo import scans_collection, db
+from db.mongo import scans_collection, users_collection, db
 
 settings_col = db["settings"]
 from utils.model_loader import (
-    load_vit_model, load_resnet18_model, predict, get_device
+    load_vit_model, load_resnet18_model, predict, get_device,
+    load_binary_model, load_fraud_type_model,
+    predict_image, predict_with_tta,
+    DOC_TYPE_LABELS, BINARY_LABELS, FRAUD_TYPE_LABELS,
 )
 
 load_dotenv()
@@ -87,6 +90,127 @@ def _get_model(model_name: str):
     else:
         raise HTTPException(status_code=400, detail="Unknown model. Use 'vit' or 'resnet18'")
     return _cache[model_name]
+
+# ── Pipeline model paths (hardcoded for now) ─────────────────────────────────
+_PIPELINE_PATHS = {
+    "doc_type":                str(_ROOT / "models" / "vit_document_classifier_9000.pth"),
+    "passport_binary":         str(_ROOT / "notebooks" / "passport_forgery" / "production" / "vit_binary_improved_20k.pth"),
+    "passport_fraud_type":     str(_ROOT / "notebooks" / "passport_forgery" / "production" / "vit_fraud_type_20k.pth"),
+    "id_card_binary":          str(_ROOT / "notebooks" / "id_card_forgery" / "production" / "vit_binary_improved_20k.pth"),
+    "id_card_fraud_type":      str(_ROOT / "notebooks" / "id_card_forgery" / "production" / "vit_fraud_type_20k.pth"),
+    "drivers_license_binary":  str(_ROOT / "notebooks" / "drivers_license_forgery" / "production" / "vit_binary_improved_15k.pth"),
+    "drivers_license_fraud_type": str(_ROOT / "notebooks" / "drivers_license_forgery" / "production" / "vit_fraud_type_15k.pth"),
+}
+
+DOC_TYPE_TO_PREFIX = {
+    "ID Card": "id_card",
+    "Passport": "passport",
+    "Driver License": "drivers_license",
+}
+
+# Role-keyed model cache for the pipeline
+_pipeline_cache: dict = {}
+
+def _load_pipeline_model(role: str):
+    """Load and cache a pipeline model by role."""
+    if role in _pipeline_cache:
+        return _pipeline_cache[role]
+
+    path = _PIPELINE_PATHS.get(role)
+    if not path or not Path(path).exists():
+        return None
+
+    device = get_device()
+    if role == "doc_type":
+        model = load_vit_model(path, device=device)
+    elif role.endswith("_binary"):
+        model = load_binary_model(path, device=device)
+    elif role.endswith("_fraud_type"):
+        model = load_fraud_type_model(path, device=device)
+    else:
+        return None
+
+    _pipeline_cache[role] = model
+    return model
+
+
+def run_pipeline(image: Image.Image, device: str) -> dict:
+    """
+    Run the 3-stage pipeline:
+      Stage 1: Document type classification
+      Stage 2: Binary forgery detection (per doc type)
+      Stage 3: Fraud type classification (if fake)
+    """
+    result = {"stages_completed": [], "demo": False}
+
+    # ── Stage 1: Document Type ────────────────────────────────────────────
+    doc_model = _load_pipeline_model("doc_type")
+    if doc_model is None:
+        result["demo"] = True
+        result["doc_type"] = _demo_result("vit")
+        result["stages_completed"].append("doc_type")
+        return result
+
+    doc_result = predict_image(doc_model, image, device=device, label_map=DOC_TYPE_LABELS)
+    result["doc_type"] = doc_result
+    result["stages_completed"].append("doc_type")
+
+    # ── Stage 2: Binary (Real / Fake) ─────────────────────────────────────
+    predicted_type = doc_result["predicted"]
+    prefix = DOC_TYPE_TO_PREFIX.get(predicted_type)
+    if not prefix:
+        result["binary"] = None
+        result["fraud_type"] = None
+        result["verdict"] = "Classification only"
+        return result
+
+    binary_role = f"{prefix}_binary"
+    binary_model = _load_pipeline_model(binary_role)
+    if binary_model is None:
+        result["binary"] = None
+        result["fraud_type"] = None
+        result["verdict"] = "Classification only"
+        return result
+
+    binary_result = predict_with_tta(binary_model, image, device=device, label_map=BINARY_LABELS)
+    result["binary"] = binary_result
+    result["stages_completed"].append("binary")
+
+    # ── Stage 3: Fraud Type (only if Fake) ────────────────────────────────
+    if binary_result["predicted"] == "Real":
+        result["fraud_type"] = None
+        result["verdict"] = "Real"
+        return result
+
+    fraud_role = f"{prefix}_fraud_type"
+    fraud_model = _load_pipeline_model(fraud_role)
+    if fraud_model is None:
+        result["fraud_type"] = None
+        result["verdict"] = "Fake"
+        return result
+
+    fraud_result = predict_with_tta(fraud_model, image, device=device, label_map=FRAUD_TYPE_LABELS)
+    result["fraud_type"] = fraud_result
+    result["stages_completed"].append("fraud_type")
+    result["verdict"] = f"Fake - {fraud_result['predicted']}"
+
+    return result
+
+
+# ── Public stats (no auth required) ───────────────────────────────────────────
+@router.get("/public/stats")
+def get_public_stats():
+    total_users = users_collection.count_documents({})
+    total_scans = scans_collection.count_documents({})
+    forged = scans_collection.count_documents({"verdict": {"$regex": "^Fake"}})
+    authentic = scans_collection.count_documents({"verdict": "Real"})
+    return {
+        "total_users": total_users,
+        "total_scans": total_scans,
+        "forged": forged,
+        "authentic": authentic,
+    }
+
 
 # ── Auth helper ───────────────────────────────────────────────────────────────
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -169,6 +293,87 @@ async def classify(
         "demo": result.get("demo", False),
         "image_private": not save_image,
     }
+
+# ── Analyze (full 3-stage pipeline) ───────────────────────────────────────────
+@router.post("/analyze")
+async def analyze(
+    file: UploadFile = File(...),
+    save_image: bool = Form(True),
+    user=Depends(get_current_user),
+):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files are supported")
+
+    contents = await file.read()
+    try:
+        image = Image.open(io.BytesIO(contents))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not read image file")
+
+    device = get_device()
+    pipeline_result = run_pipeline(image, device)
+
+    # Create thumbnail
+    if save_image:
+        thumb = image.convert("RGB")
+        thumb.thumbnail((400, 400))
+        buf = io.BytesIO()
+        thumb.save(buf, format="JPEG", quality=65)
+        image_b64 = base64.b64encode(buf.getvalue()).decode()
+    else:
+        from PIL import ImageDraw
+        placeholder = Image.new("RGB", (400, 300), color=(30, 30, 40))
+        draw = ImageDraw.Draw(placeholder)
+        cx, cy = 200, 150
+        draw.rounded_rectangle([cx-30, cy-20, cx+30, cy+30], radius=6, fill=(60, 60, 75))
+        draw.arc([cx-18, cy-40, cx+18, cy-10], start=0, end=180, fill=(160, 160, 180), width=6)
+        draw.text((cx, cy+55), "Image Hidden", fill=(100, 100, 120), anchor="mm")
+        buf = io.BytesIO()
+        placeholder.save(buf, format="JPEG", quality=80)
+        image_b64 = base64.b64encode(buf.getvalue()).decode()
+
+    # Determine overall confidence (deepest completed stage)
+    if pipeline_result.get("fraud_type"):
+        overall_confidence = pipeline_result["fraud_type"]["confidence"]
+    elif pipeline_result.get("binary"):
+        overall_confidence = pipeline_result["binary"]["confidence"]
+    else:
+        overall_confidence = pipeline_result["doc_type"]["confidence"]
+
+    verdict = pipeline_result.get("verdict", "Classification only")
+
+    # Save to DB
+    scan = {
+        "user_id": user["id"],
+        "file_name": file.filename,
+        "pipeline": True,
+        "model_used": "pipeline",
+        "doc_type": pipeline_result["doc_type"]["predicted"],
+        "doc_type_confidence": pipeline_result["doc_type"]["confidence"],
+        "doc_type_probabilities": pipeline_result["doc_type"]["probabilities"],
+        "verdict": verdict,
+        "binary_result": pipeline_result.get("binary"),
+        "fraud_type_result": pipeline_result.get("fraud_type"),
+        "stages_completed": pipeline_result["stages_completed"],
+        "confidence": overall_confidence,
+        "probabilities": pipeline_result["doc_type"]["probabilities"],
+        "image_data": image_b64,
+        "image_private": not save_image,
+        "scanned_at": datetime.utcnow(),
+    }
+    inserted = scans_collection.insert_one(scan)
+
+    return {
+        "scan_id": str(inserted.inserted_id),
+        "doc_type": pipeline_result["doc_type"],
+        "binary": pipeline_result.get("binary"),
+        "fraud_type": pipeline_result.get("fraud_type"),
+        "verdict": verdict,
+        "stages_completed": pipeline_result["stages_completed"],
+        "demo": pipeline_result.get("demo", False),
+        "image_private": not save_image,
+    }
+
 
 # ── Request model ─────────────────────────────────────────────────────────────
 class ScanCreate(BaseModel):

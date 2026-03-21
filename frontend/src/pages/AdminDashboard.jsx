@@ -237,6 +237,9 @@ export default function AdminDashboard() {
           <button className={tab === "scans" ? "active" : ""} onClick={() => setTab("scans")}>
             <ScanIcon /> Scans
           </button>
+          <button className={tab === "models" ? "active" : ""} onClick={() => setTab("models")}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Models
+          </button>
           <button className={tab === "messages" ? "active" : ""} onClick={() => { setTab("messages"); clearAdminUnread(); }}>
             <ChatIcon /> Messages
             {adminUnread > 0 && <span className="admin-nav-badge">{adminUnread > 9 ? "9+" : adminUnread}</span>}
@@ -258,7 +261,7 @@ export default function AdminDashboard() {
       <main className="admin-main">
         <div className="admin-topbar">
           <div>
-            <h1>{tab === "overview" ? "Dashboard Overview" : tab === "users" ? "User Management" : tab === "messages" ? "Messages" : "All Scans"}</h1>
+            <h1>{tab === "overview" ? "Dashboard Overview" : tab === "users" ? "User Management" : tab === "models" ? "Model Management" : tab === "messages" ? "Messages" : "All Scans"}</h1>
             <p>Last updated: {new Date().toLocaleTimeString()} · Auto-refreshes every 15s</p>
           </div>
           <div className="admin-live">
@@ -269,7 +272,7 @@ export default function AdminDashboard() {
 
         {tab === "overview" && stats && (
           <>
-            <div className="admin-stats-grid">
+            <div className="admin-stats-grid admin-stats-wide">
               <StatCard label="Total Users" value={stats.total_users} icon="👥" color="lime" />
               <StatCard label="New Today" value={stats.new_today} icon="✨" color="blue" />
               <StatCard label="Active Today" value={stats.active_today} icon="🟢" color="green" />
@@ -277,34 +280,8 @@ export default function AdminDashboard() {
               <StatCard label="Total Scans" value={stats.total_scans} icon="🔍" color="purple" />
               <StatCard label="Forged Detected" value={stats.forged_scans} icon="⚠️" color="red" />
             </div>
-            <div className="admin-chart-card" style={{ marginBottom: "1rem" }}>
-              <h3>Default AI Model</h3>
-              <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
-                Select which model users will use when scanning documents
-              </p>
-              <div style={{ display: "flex", gap: "0.75rem" }}>
-                {[{ id: "vit", label: "ViT", sub: "Vision Transformer" }, { id: "resnet18", label: "ResNet-18", sub: "Residual Network" }].map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => saveDefaultModel(m.id)}
-                    style={{
-                      flex: 1, padding: "0.75rem 1rem", borderRadius: "8px", cursor: "pointer",
-                      border: defaultModel === m.id ? "2px solid #a3e635" : "2px solid var(--border)",
-                      background: defaultModel === m.id ? "rgba(163,230,53,0.08)" : "var(--card)",
-                      color: defaultModel === m.id ? "#a3e635" : "var(--muted)",
-                      fontWeight: defaultModel === m.id ? 700 : 400,
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    <div>{m.label}</div>
-                    <div style={{ fontSize: "0.75rem", opacity: 0.7 }}>{m.sub}</div>
-                    {defaultModel === m.id && <div style={{ fontSize: "0.7rem", marginTop: "0.25rem" }}>✓ Active</div>}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            <div className="admin-chart-card">
+            <div className="admin-chart-card admin-chart-wide">
               <h3>Login Activity — Last 7 Days</h3>
               <div className="admin-chart">
                 {stats.chart.map((d, i) => (
@@ -320,6 +297,62 @@ export default function AdminDashboard() {
               </div>
             </div>
           </>
+        )}
+
+        {tab === "models" && (
+          <div className="admin-models-tab">
+            <div className="admin-chart-card" style={{ marginBottom: "1.5rem" }}>
+              <h3>Default AI Model</h3>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginBottom: "1.25rem" }}>
+                Select which model users will use when scanning documents
+              </p>
+              <div style={{ display: "flex", gap: "1rem" }}>
+                {[{ id: "vit", label: "ViT", sub: "Vision Transformer" }, { id: "resnet18", label: "ResNet-18", sub: "Residual Network" }].map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => saveDefaultModel(m.id)}
+                    style={{
+                      flex: 1, padding: "1.1rem 1.25rem", borderRadius: "12px", cursor: "pointer",
+                      border: defaultModel === m.id ? "2px solid #a3e635" : "2px solid var(--border)",
+                      background: defaultModel === m.id ? "rgba(163,230,53,0.08)" : "var(--card)",
+                      color: defaultModel === m.id ? "#a3e635" : "var(--muted)",
+                      fontWeight: defaultModel === m.id ? 700 : 400,
+                      fontSize: "1rem", fontFamily: "inherit",
+                    }}
+                  >
+                    <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>{m.label}</div>
+                    <div style={{ fontSize: "0.85rem", opacity: 0.7, marginTop: "0.2rem" }}>{m.sub}</div>
+                    {defaultModel === m.id && <div style={{ fontSize: "0.78rem", marginTop: "0.4rem", color: "#a3e635" }}>✓ Active</div>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="admin-chart-card">
+              <h3>Pipeline Models</h3>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginBottom: "1.25rem" }}>
+                7 models power the 3-stage analysis pipeline
+              </p>
+              <div className="admin-model-list">
+                {[
+                  { role: "Doc Type Classifier", type: "ViT-Tiny", classes: "3 classes", status: "active" },
+                  { role: "Passport — Real/Fake", type: "ViT-Small", classes: "2 classes", status: "active" },
+                  { role: "Passport — Fraud Type", type: "ViT-Small", classes: "2 classes", status: "active" },
+                  { role: "ID Card — Real/Fake", type: "ViT-Small", classes: "2 classes", status: "active" },
+                  { role: "ID Card — Fraud Type", type: "ViT-Small", classes: "2 classes", status: "active" },
+                  { role: "Driver License — Real/Fake", type: "ViT-Small", classes: "2 classes", status: "active" },
+                  { role: "Driver License — Fraud Type", type: "ViT-Small", classes: "2 classes", status: "active" },
+                ].map((m, i) => (
+                  <div key={i} className="admin-model-row">
+                    <span className="admin-model-name">{m.role}</span>
+                    <span className="admin-model-type">{m.type}</span>
+                    <span className="admin-model-classes">{m.classes}</span>
+                    <span className="admin-model-status">Active</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
 
         {tab === "messages" && (
@@ -502,6 +535,10 @@ export default function AdminDashboard() {
         <button className={tab === "overview" ? "active" : ""} onClick={() => setTab("overview")}><GridIcon /><span>Overview</span></button>
         <button className={tab === "users" ? "active" : ""} onClick={() => setTab("users")}><UsersIcon /><span>Users</span></button>
         <button className={tab === "scans" ? "active" : ""} onClick={() => setTab("scans")}><ScanIcon /><span>Scans</span></button>
+        <button className={tab === "models" ? "active" : ""} onClick={() => setTab("models")}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          <span>Models</span>
+        </button>
         <button className={tab === "messages" ? "active" : ""} onClick={() => { setTab("messages"); clearAdminUnread(); }} style={{ position: "relative" }}>
           <ChatIcon /><span>Messages</span>
           {adminUnread > 0 && <span className="admin-nav-badge">{adminUnread > 9 ? "9+" : adminUnread}</span>}

@@ -12,6 +12,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserProfile from "./pages/UserProfile";
 import ScanPage from "./pages/ScanPage";
+import Dashboard from "./pages/Dashboard";
 import ChatWidget from "./components/ChatWidget";
 
 function AdminRoute({ children }) {
@@ -40,6 +41,11 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/dashboard" element={
+          <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        } />
         <Route path="/scan" element={
           <PrivateRoute>
             <ScanPage />
