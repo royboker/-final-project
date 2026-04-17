@@ -4,7 +4,7 @@ The 6 DiT (Document Image Transformer) model weights are **not included in git**
 
 ## Google Drive
 
-Folder: <!-- TODO: paste Google Drive folder link here -->
+Folder: https://drive.google.com/drive/folders/1miR59JG3T531GdpBVp8-AHc9UyuxOpuS?usp=sharing
 
 ## Files & Destinations
 
