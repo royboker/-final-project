@@ -18,7 +18,7 @@ export default function AuthCallback() {
 
 if (token) {
   setSession(token, user);
-  setTimeout(() => navigate("/", { replace: true }), 100);
+  setTimeout(() => navigate("/dashboard", { replace: true }), 100);
 } else {
   navigate("/login", { replace: true });
 }

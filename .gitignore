@@ -60,3 +60,18 @@ datasets/idnet/WV/
 # Keep only small files
 !datasets/idnet/*.csv
 !datasets/idnet/document_type_classification/data/*.csv
+
+# Large DiT model weights (>100MB, exceed GitHub limit) — download from Google Drive
+# See models/final_models/DIT_MODELS_README.md
+models/final_models/dit_drivers_license_binary_15k.pth
+models/final_models/dit_drivers_license_fraud_type_15k.pth
+models/final_models/dit_id_card_binary_20k.pth
+models/final_models/dit_id_card_fraud_type_20k.pth
+models/final_models/dit_passport_binary_20k.pth
+models/final_models/dit_passport_fraud_type_20k.pth
+notebooks/drivers_license_forgery/production/dit_binary_15k.pth
+notebooks/drivers_license_forgery/production/dit_fraud_type_15k.pth
+notebooks/id_card_forgery/production/dit_binary_20k.pth
+notebooks/id_card_forgery/production/dit_fraud_type_20k.pth
+notebooks/passport_forgery/production/dit_binary_20k.pth
+notebooks/passport_forgery/production/dit_fraud_type_20k.pth

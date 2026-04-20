@@ -5,7 +5,20 @@
       "Bash(source:*)",
       "Bash(python:*)",
       "Bash(file:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(TOKENIZERS_PARALLELISM=false python -c \":*)",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)",
+      "Bash(pip index:*)",
+      "Bash(xargs basename:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(pip list:*)",
+      "Bash(open /Users/roy-siftt/final-project/results_comparison.pdf)",
+      "Bash(git ls-tree:*)",
+      "Bash(sort -k4 -n)",
+      "Bash(git reset:*)",
+      "Bash(du -sh notebooks/*/production/*.pkl)"
     ]
   }
 }

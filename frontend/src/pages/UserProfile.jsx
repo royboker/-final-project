@@ -116,7 +116,7 @@ export default function UserProfile() {
     ? new Date(profile.last_login).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
     : "Never";
   const totalScans = scans.length;
-  const forgedCount = scans.filter(s => s.verdict === "forged").length;
+  const forgedCount = scans.filter(s => s.verdict?.startsWith("Fake")).length;
 
   if (loading) return (
     <>
