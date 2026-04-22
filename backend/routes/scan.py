@@ -23,6 +23,7 @@ settings_col = db["settings"]
 from utils.model_loader import (
     load_vit_model, load_resnet18_model, predict, get_device,
     load_binary_model, load_fraud_type_model,
+    load_dit_binary_model, load_dit_fraud_type_model,
     predict_image, predict_with_tta,
     DOC_TYPE_LABELS, BINARY_LABELS, FRAUD_TYPE_LABELS,
 )
@@ -36,25 +37,14 @@ from config import JWT_SECRET, ALGORITHM
 
 # ── Model paths ───────────────────────────────────────────────────────────────
 _ROOT = Path(__file__).resolve().parent.parent.parent
-
-# Search in multiple locations (models may be saved in different places)
-_SEARCH_DIRS = [
-    _ROOT / "models",
-    _ROOT / "notebooks" / "document_type_classification" / "resnet18",
-    _ROOT / "notebooks" / "document_type_classification" / "vit",
-    _ROOT / "notebooks" / "document_type_classification" / "dit",
-    _ROOT,
-]
+_MODELS_DIR = _ROOT / "models" / "final_models"
 
 def _find_model(filename: str) -> Path | None:
-    for d in _SEARCH_DIRS:
-        p = d / filename
-        if p.exists():
-            return p
-    return None
+    p = _MODELS_DIR / filename
+    return p if p.exists() else None
 
-VIT_PATH    = _find_model("vit_document_classifier_9000.pth")
-RESNET_PATH = _find_model("resnet18_document_classifier_9000.pth")
+VIT_PATH    = _find_model("vit_document_classifier_9k.pth")
+RESNET_PATH = _find_model("resnet18_document_classifier_9k.pth")
 
 # Cache loaded models so we don't reload on every request
 _cache: dict = {}
@@ -77,8 +67,8 @@ def _get_model(model_name: str):
     if model_name in _cache:
         return _cache[model_name]
     device = get_device()
-    vit_path    = _find_model("vit_document_classifier_9000.pth")
-    resnet_path = _find_model("resnet18_document_classifier_9000.pth")
+    vit_path    = _find_model("vit_document_classifier_9k.pth")
+    resnet_path = _find_model("resnet18_document_classifier_9k.pth")
     if model_name == "vit":
         if not vit_path:
             return None  # demo mode
@@ -91,15 +81,29 @@ def _get_model(model_name: str):
         raise HTTPException(status_code=400, detail="Unknown model. Use 'vit' or 'resnet18'")
     return _cache[model_name]
 
-# ── Pipeline model paths (hardcoded for now) ─────────────────────────────────
+# ── Pipeline model paths (all 14 models loaded from models/final_models/) ────
+# Roles:
+#   doc_type_vit, doc_type_resnet18           (document type classifier)
+#   <doctype>_binary_<arch>                   (binary forgery — vit/dit)
+#   <doctype>_fraud_type_<arch>               (fraud type — vit/dit)
 _PIPELINE_PATHS = {
-    "doc_type":                str(_ROOT / "models" / "vit_document_classifier_9000.pth"),
-    "passport_binary":         str(_ROOT / "notebooks" / "passport_forgery" / "production" / "vit_binary_improved_20k.pth"),
-    "passport_fraud_type":     str(_ROOT / "notebooks" / "passport_forgery" / "production" / "vit_fraud_type_20k.pth"),
-    "id_card_binary":          str(_ROOT / "notebooks" / "id_card_forgery" / "production" / "vit_binary_improved_20k.pth"),
-    "id_card_fraud_type":      str(_ROOT / "notebooks" / "id_card_forgery" / "production" / "vit_fraud_type_20k.pth"),
-    "drivers_license_binary":  str(_ROOT / "notebooks" / "drivers_license_forgery" / "production" / "vit_binary_improved_15k.pth"),
-    "drivers_license_fraud_type": str(_ROOT / "notebooks" / "drivers_license_forgery" / "production" / "vit_fraud_type_15k.pth"),
+    # Document type classifiers
+    "doc_type_vit":                   str(_MODELS_DIR / "vit_document_classifier_9k.pth"),
+    "doc_type_resnet18":              str(_MODELS_DIR / "resnet18_document_classifier_9k.pth"),
+    # ViT-Small forgery models
+    "passport_binary_vit":            str(_MODELS_DIR / "vit_passport_binary_20k.pth"),
+    "passport_fraud_type_vit":        str(_MODELS_DIR / "vit_passport_fraud_type_20k.pth"),
+    "id_card_binary_vit":             str(_MODELS_DIR / "vit_id_card_binary_20k.pth"),
+    "id_card_fraud_type_vit":         str(_MODELS_DIR / "vit_id_card_fraud_type_20k.pth"),
+    "drivers_license_binary_vit":     str(_MODELS_DIR / "vit_drivers_license_binary_15k.pth"),
+    "drivers_license_fraud_type_vit": str(_MODELS_DIR / "vit_drivers_license_fraud_type_15k.pth"),
+    # DiT-Base forgery models
+    "passport_binary_dit":            str(_MODELS_DIR / "dit_passport_binary_20k.pth"),
+    "passport_fraud_type_dit":        str(_MODELS_DIR / "dit_passport_fraud_type_20k.pth"),
+    "id_card_binary_dit":             str(_MODELS_DIR / "dit_id_card_binary_20k.pth"),
+    "id_card_fraud_type_dit":         str(_MODELS_DIR / "dit_id_card_fraud_type_20k.pth"),
+    "drivers_license_binary_dit":     str(_MODELS_DIR / "dit_drivers_license_binary_15k.pth"),
+    "drivers_license_fraud_type_dit": str(_MODELS_DIR / "dit_drivers_license_fraud_type_15k.pth"),
 }
 
 DOC_TYPE_TO_PREFIX = {
@@ -108,11 +112,47 @@ DOC_TYPE_TO_PREFIX = {
     "Driver License": "drivers_license",
 }
 
+# ── Active-model settings (admin-configurable, stored in MongoDB) ────────────
+_ACTIVE_MODELS_KEY = "active_models"
+_ACTIVE_MODELS_DEFAULTS = {
+    "doc_type": "vit",                       # vit | resnet18
+    "passport_binary": "vit",                # vit | dit
+    "passport_fraud_type": "vit",
+    "id_card_binary": "vit",
+    "id_card_fraud_type": "vit",
+    "drivers_license_binary": "vit",
+    "drivers_license_fraud_type": "vit",
+}
+_ACTIVE_MODELS_ALLOWED = {
+    "doc_type": {"vit", "resnet18"},
+    "passport_binary": {"vit", "dit"},
+    "passport_fraud_type": {"vit", "dit"},
+    "id_card_binary": {"vit", "dit"},
+    "id_card_fraud_type": {"vit", "dit"},
+    "drivers_license_binary": {"vit", "dit"},
+    "drivers_license_fraud_type": {"vit", "dit"},
+}
+
+
+def _get_active_models() -> dict:
+    """Return admin-selected model arch for each pipeline slot,
+    merging stored values over defaults."""
+    doc = settings_col.find_one({"key": _ACTIVE_MODELS_KEY})
+    stored = doc.get("value", {}) if doc else {}
+    return {**_ACTIVE_MODELS_DEFAULTS, **{k: v for k, v in stored.items() if k in _ACTIVE_MODELS_DEFAULTS}}
+
+
 # Role-keyed model cache for the pipeline
 _pipeline_cache: dict = {}
 
 def _load_pipeline_model(role: str):
-    """Load and cache a pipeline model by role."""
+    """Load and cache a pipeline model by role.
+
+    Role naming:
+      doc_type_vit, doc_type_resnet18
+      <doctype>_binary_<arch>       (arch in {vit, dit})
+      <doctype>_fraud_type_<arch>
+    """
     if role in _pipeline_cache:
         return _pipeline_cache[role]
 
@@ -121,12 +161,18 @@ def _load_pipeline_model(role: str):
         return None
 
     device = get_device()
-    if role == "doc_type":
+    if role == "doc_type_vit":
         model = load_vit_model(path, device=device)
-    elif role.endswith("_binary"):
+    elif role == "doc_type_resnet18":
+        model = load_resnet18_model(path, device=device)
+    elif role.endswith("_binary_vit"):
         model = load_binary_model(path, device=device)
-    elif role.endswith("_fraud_type"):
+    elif role.endswith("_fraud_type_vit"):
         model = load_fraud_type_model(path, device=device)
+    elif role.endswith("_binary_dit"):
+        model = load_dit_binary_model(path, device=device)
+    elif role.endswith("_fraud_type_dit"):
+        model = load_dit_fraud_type_model(path, device=device)
     else:
         return None
 
@@ -136,24 +182,30 @@ def _load_pipeline_model(role: str):
 
 def run_pipeline(image: Image.Image, device: str) -> dict:
     """
-    Run the 3-stage pipeline:
-      Stage 1: Document type classification
-      Stage 2: Binary forgery detection (per doc type)
-      Stage 3: Fraud type classification (if fake)
+    Run the 3-stage pipeline using admin-configured model selection:
+      Stage 1: Document type classification (vit | resnet18)
+      Stage 2: Binary forgery detection        (vit | dit)
+      Stage 3: Fraud type classification       (vit | dit, only if Fake)
     """
-    result = {"stages_completed": [], "demo": False}
+    active = _get_active_models()
+    # models_used tracks which arch ran at each stage that actually executed
+    models_used: dict = {}
+    result = {"stages_completed": [], "demo": False, "models_used": models_used, "active_models": active}
 
     # ── Stage 1: Document Type ────────────────────────────────────────────
-    doc_model = _load_pipeline_model("doc_type")
+    doc_arch = active["doc_type"]
+    doc_role = f"doc_type_{doc_arch}"
+    doc_model = _load_pipeline_model(doc_role)
     if doc_model is None:
         result["demo"] = True
-        result["doc_type"] = _demo_result("vit")
+        result["doc_type"] = _demo_result(doc_arch)
         result["stages_completed"].append("doc_type")
         return result
 
     doc_result = predict_image(doc_model, image, device=device, label_map=DOC_TYPE_LABELS)
     result["doc_type"] = doc_result
     result["stages_completed"].append("doc_type")
+    models_used["doc_type"] = doc_arch
 
     # ── Stage 2: Binary (Real / Fake) ─────────────────────────────────────
     predicted_type = doc_result["predicted"]
@@ -164,7 +216,8 @@ def run_pipeline(image: Image.Image, device: str) -> dict:
         result["verdict"] = "Classification only"
         return result
 
-    binary_role = f"{prefix}_binary"
+    binary_arch = active[f"{prefix}_binary"]
+    binary_role = f"{prefix}_binary_{binary_arch}"
     binary_model = _load_pipeline_model(binary_role)
     if binary_model is None:
         result["binary"] = None
@@ -175,6 +228,7 @@ def run_pipeline(image: Image.Image, device: str) -> dict:
     binary_result = predict_with_tta(binary_model, image, device=device, label_map=BINARY_LABELS)
     result["binary"] = binary_result
     result["stages_completed"].append("binary")
+    models_used["binary"] = binary_arch
 
     # ── Stage 3: Fraud Type (only if Fake) ────────────────────────────────
     if binary_result["predicted"] == "Real":
@@ -182,7 +236,8 @@ def run_pipeline(image: Image.Image, device: str) -> dict:
         result["verdict"] = "Real"
         return result
 
-    fraud_role = f"{prefix}_fraud_type"
+    fraud_arch = active[f"{prefix}_fraud_type"]
+    fraud_role = f"{prefix}_fraud_type_{fraud_arch}"
     fraud_model = _load_pipeline_model(fraud_role)
     if fraud_model is None:
         result["fraud_type"] = None
@@ -192,6 +247,7 @@ def run_pipeline(image: Image.Image, device: str) -> dict:
     fraud_result = predict_with_tta(fraud_model, image, device=device, label_map=FRAUD_TYPE_LABELS)
     result["fraud_type"] = fraud_result
     result["stages_completed"].append("fraud_type")
+    models_used["fraud_type"] = fraud_arch
     result["verdict"] = f"Fake - {fraud_result['predicted']}"
 
     return result
@@ -343,11 +399,13 @@ async def analyze(
     verdict = pipeline_result.get("verdict", "Classification only")
 
     # Save to DB
+    models_used = pipeline_result.get("models_used", {})
     scan = {
         "user_id": user["id"],
         "file_name": file.filename,
         "pipeline": True,
         "model_used": "pipeline",
+        "models_used": models_used,
         "doc_type": pipeline_result["doc_type"]["predicted"],
         "doc_type_confidence": pipeline_result["doc_type"]["confidence"],
         "doc_type_probabilities": pipeline_result["doc_type"]["probabilities"],
@@ -369,6 +427,7 @@ async def analyze(
         "binary": pipeline_result.get("binary"),
         "fraud_type": pipeline_result.get("fraud_type"),
         "verdict": verdict,
+        "models_used": models_used,
         "stages_completed": pipeline_result["stages_completed"],
         "demo": pipeline_result.get("demo", False),
         "image_private": not save_image,
@@ -473,6 +532,54 @@ async def download_report_with_image(
     return _build_pdf_report(scan, scan_id)
 
 
+def _draw_stage_section(c, y, W, *, title: str, arch: str | None,
+                        predicted: str, confidence: float,
+                        probabilities: dict, top_key: str | None) -> float:
+    """Draw one pipeline stage: title bar + predicted line + probability bars.
+    Returns the new y cursor."""
+    # Section header (title + arch pill on the right)
+    c.setFont("Helvetica-Bold", 9)
+    c.setFillColor(colors.HexColor("#a3e635"))
+    c.drawString(36, y, title.upper())
+    if arch:
+        c.setFillColor(colors.HexColor("#27272a"))
+        c.roundRect(W - 80, y - 4, 44, 16, 4, fill=1, stroke=0)
+        c.setFillColor(colors.HexColor("#a3e635"))
+        c.setFont("Helvetica-Bold", 9)
+        c.drawCentredString(W - 58, y, arch.upper())
+    y -= 18
+
+    # Predicted line
+    c.setFont("Helvetica-Bold", 12)
+    c.setFillColor(colors.HexColor("#e4e4e7"))
+    c.drawString(36, y, str(predicted) if predicted else "—")
+    c.setFont("Helvetica-Bold", 11)
+    c.setFillColor(colors.HexColor("#a3e635"))
+    c.drawRightString(W - 36, y, f"{round((confidence or 0) * 100)}%")
+    y -= 14
+
+    # Probability bars
+    if probabilities:
+        for lbl, val in sorted(probabilities.items(), key=lambda x: -x[1]):
+            pct = round(val * 100)
+            is_top = lbl == top_key
+            c.setFont("Helvetica", 9)
+            c.setFillColor(colors.HexColor("#a1a1aa"))
+            c.drawString(36, y, str(lbl))
+            y -= 10
+            bar_w = W - 36 - 36
+            c.setFillColor(colors.HexColor("#27272a"))
+            c.roundRect(36, y, bar_w, 6, 3, fill=1, stroke=0)
+            c.setFillColor(colors.HexColor("#a3e635" if is_top else "#3f3f46"))
+            c.roundRect(36, y, max(bar_w * val, 4), 6, 3, fill=1, stroke=0)
+            c.setFont("Helvetica-Bold", 7)
+            c.setFillColor(colors.HexColor("#e4e4e7"))
+            c.drawRightString(W - 36, y, f"{pct}%")
+            y -= 14
+
+    return y - 8
+
+
 def _build_pdf_report(scan: dict, scan_id: str) -> StreamingResponse:
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
@@ -491,85 +598,127 @@ def _build_pdf_report(scan: dict, scan_id: str) -> StreamingResponse:
     c.setFont("Helvetica", 11)
     c.drawString(145, H - 40, "— Scan Report")
 
-    # ── Result badge ────────────────────────────────────────────────────────
-    conf = scan.get("confidence", 0)
+    # ── Result badge (verdict-based for pipeline scans, confidence-based otherwise) ─
+    verdict = scan.get("verdict")
+    conf = scan.get("confidence", 0) or 0
     conf_pct = round(conf * 100)
-    badge_color = "#a3e635" if conf_pct >= 70 else "#fb923c" if conf_pct >= 45 else "#f87171"
+    is_pipeline = bool(scan.get("pipeline")) or verdict is not None
+
+    if is_pipeline and verdict:
+        if verdict == "Real":
+            badge_color, badge_label = "#a3e635", "✓ Authentic"
+        elif verdict.startswith("Fake"):
+            badge_color, badge_label = "#f87171", "✗ Forged"
+        else:
+            badge_color, badge_label = "#fb923c", "⚠ Unknown"
+    else:
+        if conf_pct >= 70:
+            badge_color, badge_label = "#a3e635", "✓ Authentic"
+        elif conf_pct >= 45:
+            badge_color, badge_label = "#fb923c", "⚠ Uncertain"
+        else:
+            badge_color, badge_label = "#f87171", "✗ Suspicious"
+
     c.setFillColor(colors.HexColor(badge_color))
     c.roundRect(W - 140, H - 52, 110, 32, 8, fill=1, stroke=0)
     c.setFillColor(colors.HexColor("#09090f"))
     c.setFont("Helvetica-Bold", 13)
-    label = "✓ Authentic" if conf_pct >= 70 else "⚠ Uncertain" if conf_pct >= 45 else "✗ Suspicious"
-    c.drawCentredString(W - 85, H - 38, label)
+    c.drawCentredString(W - 85, H - 38, badge_label)
 
-    # ── Scan info ───────────────────────────────────────────────────────────
-    y = H - 100
-    def field(title, value, ypos):
-        c.setFont("Helvetica-Bold", 9)
-        c.setFillColor(colors.HexColor("#52525b"))
-        c.drawString(36, ypos, title.upper())
-        c.setFont("Helvetica", 12)
-        c.setFillColor(colors.HexColor("#e4e4e7"))
-        c.drawString(150, ypos, str(value) if value else "—")
-
-    field("File", scan.get("file_name", "—"), y);           y -= 24
-    field("Document Type", scan.get("doc_type", "—"), y);   y -= 24
-    field("Model Used", scan.get("model_used", "—"), y);    y -= 24
-    field("Confidence", f"{conf_pct}%", y);                 y -= 24
-    scanned_at = scan.get("scanned_at")
-    date_str = scanned_at.strftime("%d/%m/%Y %H:%M") if scanned_at else "—"
-    field("Scanned At", date_str, y);                       y -= 40
-
-    # ── Divider ─────────────────────────────────────────────────────────────
-    c.setStrokeColor(colors.HexColor("#27272a"))
-    c.setLineWidth(1)
-    c.line(36, y, W - 36, y);  y -= 20
-
-    # ── Thumbnail ───────────────────────────────────────────────────────────
+    # ── Top block: thumbnail on left, scan info on right ────────────────────
+    y = H - 90
     img_data = scan.get("image_data")
+    info_x = 36
     if img_data:
         try:
             img_bytes = base64.b64decode(img_data)
             img_reader = ImageReader(io.BytesIO(img_bytes))
             img_w, img_h = 160, 100
-            c.drawImage(img_reader, 36, y - img_h, img_w, img_h, preserveAspectRatio=True, mask="auto")
-            probs_x = 36 + img_w + 20
+            c.drawImage(img_reader, 36, y - img_h, img_w, img_h,
+                        preserveAspectRatio=True, mask="auto")
+            info_x = 36 + img_w + 20
         except Exception:
-            probs_x = 36
-            img_h = 0
-    else:
-        probs_x = 36
-        img_h = 0
+            pass
 
-    # ── Probabilities ───────────────────────────────────────────────────────
-    probs = scan.get("probabilities", {})
-    if probs:
-        py = y - 10
-        c.setFont("Helvetica-Bold", 9)
+    def field(title, value, ypos, x):
+        c.setFont("Helvetica-Bold", 8)
         c.setFillColor(colors.HexColor("#52525b"))
-        c.drawString(probs_x, py, "PROBABILITIES")
-        py -= 18
-        bar_w = W - probs_x - 36
-        for lbl, val in sorted(probs.items(), key=lambda x: -x[1]):
-            pct = round(val * 100)
-            is_top = lbl == scan.get("doc_type")
-            # label
-            c.setFont("Helvetica", 10)
-            c.setFillColor(colors.HexColor("#a1a1aa"))
-            c.drawString(probs_x, py, lbl)
-            py -= 14
-            # bar bg
-            c.setFillColor(colors.HexColor("#27272a"))
-            c.roundRect(probs_x, py, bar_w, 8, 3, fill=1, stroke=0)
-            # bar fill
-            fill_color = "#a3e635" if is_top else "#3f3f46"
-            c.setFillColor(colors.HexColor(fill_color))
-            c.roundRect(probs_x, py, max(bar_w * val, 4), 8, 3, fill=1, stroke=0)
-            # pct text
-            c.setFont("Helvetica-Bold", 8)
-            c.setFillColor(colors.HexColor("#e4e4e7"))
-            c.drawRightString(W - 36, py, f"{pct}%")
-            py -= 22
+        c.drawString(x, ypos, title.upper())
+        c.setFont("Helvetica", 11)
+        c.setFillColor(colors.HexColor("#e4e4e7"))
+        c.drawString(x, ypos - 13, str(value) if value else "—")
+
+    fy = y - 6
+    field("File", scan.get("file_name", "—"), fy, info_x);            fy -= 28
+    if is_pipeline:
+        field("Verdict", verdict or "—", fy, info_x);                 fy -= 28
+        field("Document Type", scan.get("doc_type", "—"), fy, info_x); fy -= 28
+    else:
+        field("Document Type", scan.get("doc_type", "—"), fy, info_x); fy -= 28
+        field("Model Used",    scan.get("model_used", "—"), fy, info_x); fy -= 28
+    scanned_at = scan.get("scanned_at")
+    date_str = scanned_at.strftime("%d/%m/%Y %H:%M") if scanned_at else "—"
+    field("Scanned At", date_str, fy, info_x)
+
+    y -= 120  # below the top block
+
+    # ── Divider ─────────────────────────────────────────────────────────────
+    c.setStrokeColor(colors.HexColor("#27272a"))
+    c.setLineWidth(1)
+    c.line(36, y, W - 36, y);  y -= 22
+
+    # ── Stage sections (pipeline scan) or single prob block (legacy) ────────
+    models_used = scan.get("models_used", {}) or {}
+
+    if is_pipeline:
+        # Stage 1 — Document Type
+        y = _draw_stage_section(
+            c, y, W,
+            title="Stage 1 · Document Type",
+            arch=models_used.get("doc_type"),
+            predicted=scan.get("doc_type"),
+            confidence=scan.get("doc_type_confidence", 0) or 0,
+            probabilities=scan.get("doc_type_probabilities") or scan.get("probabilities") or {},
+            top_key=scan.get("doc_type"),
+        )
+
+        # Stage 2 — Binary (Real / Fake)
+        binary = scan.get("binary_result") or {}
+        if binary:
+            y = _draw_stage_section(
+                c, y, W,
+                title="Stage 2 · Real / Fake",
+                arch=models_used.get("binary"),
+                predicted=binary.get("predicted"),
+                confidence=binary.get("confidence", 0) or 0,
+                probabilities=binary.get("probabilities") or {},
+                top_key=binary.get("predicted"),
+            )
+
+        # Stage 3 — Fraud Type (only if executed)
+        fraud = scan.get("fraud_type_result") or {}
+        if fraud:
+            y = _draw_stage_section(
+                c, y, W,
+                title="Stage 3 · Fraud Type",
+                arch=models_used.get("fraud_type"),
+                predicted=fraud.get("predicted"),
+                confidence=fraud.get("confidence", 0) or 0,
+                probabilities=fraud.get("probabilities") or {},
+                top_key=fraud.get("predicted"),
+            )
+    else:
+        # Legacy /classify scan — keep single probability block
+        probs = scan.get("probabilities", {}) or {}
+        y = _draw_stage_section(
+            c, y, W,
+            title="Classification Probabilities",
+            arch=scan.get("model_used"),
+            predicted=scan.get("doc_type"),
+            confidence=conf,
+            probabilities=probs,
+            top_key=scan.get("doc_type"),
+        )
 
     # ── Footer ──────────────────────────────────────────────────────────────
     c.setFillColor(colors.HexColor("#27272a"))
@@ -617,6 +766,41 @@ def set_default_model(data: dict, user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Invalid model")
     settings_col.update_one({"key": "default_model"}, {"$set": {"value": model}}, upsert=True)
     return {"model": model}
+
+
+# ── Pipeline model settings (per-slot active model selection) ─────────────────
+@router.get("/settings/pipeline-models")
+def get_pipeline_models():
+    """Return the currently active model arch for each pipeline slot."""
+    return _get_active_models()
+
+
+@router.put("/settings/pipeline-models")
+def set_pipeline_models(data: dict, user=Depends(get_current_user)):
+    """Admin updates one or more pipeline-slot model selections.
+    Request body: { slot_name: arch, ... } — only included slots are updated."""
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    if not isinstance(data, dict) or not data:
+        raise HTTPException(status_code=400, detail="Body must be a non-empty object of slot -> arch")
+
+    unknown = [k for k in data if k not in _ACTIVE_MODELS_ALLOWED]
+    if unknown:
+        raise HTTPException(status_code=400, detail=f"Unknown slot(s): {unknown}")
+
+    for slot, value in data.items():
+        allowed = _ACTIVE_MODELS_ALLOWED[slot]
+        if value not in allowed:
+            raise HTTPException(status_code=400, detail=f"Invalid value for {slot}: must be one of {sorted(allowed)}")
+
+    current = _get_active_models()
+    merged = {**current, **data}
+    settings_col.update_one(
+        {"key": _ACTIVE_MODELS_KEY},
+        {"$set": {"value": merged}},
+        upsert=True,
+    )
+    return merged
 
 # ── Delete all my scans ───────────────────────────────────────────────────────
 @router.delete("/my/all")

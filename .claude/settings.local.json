@@ -18,7 +18,17 @@
       "Bash(git ls-tree:*)",
       "Bash(sort -k4 -n)",
       "Bash(git reset:*)",
-      "Bash(du -sh notebooks/*/production/*.pkl)"
+      "Bash(du -sh notebooks/*/production/*.pkl)",
+      "Bash(awk -F'_' '{print $2}')",
+      "WebFetch(domain:arxiv.org)",
+      "Bash(node -e ' *)",
+      "Bash(node --check src/lib/api.js)",
+      "Bash(curl -s http://localhost:8000/scans/settings/pipeline-models)",
+      "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" -X PUT -H \"Content-Type: application/json\" -d '{\"id_card_binary\":\"dit\"}' http://localhost:8000/scans/settings/pipeline-models)",
+      "WebSearch",
+      "WebFetch(domain:www.nature.com)",
+      "Bash(open /tmp/test_report.pdf)",
+      "Bash(node *)"
     ]
   }
 }

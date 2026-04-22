@@ -203,12 +203,12 @@ export default function Register() {
             <ShieldIcon />
           </div>
           <h2>Join thousands of verifiers</h2>
-          <p>DocuGuard uses ViT and ResNet-18 models trained on 9,000+ real documents.</p>
+          <p>DocuGuard uses ViT, DiT, and ResNet-18 models trained on 20,000+ real documents.</p>
 
           <div className="reg-features">
             {[
               "ID cards, Passports & Driver Licenses",
-              "Dual AI model verification",
+              "3-stage AI verification pipeline",
               "9 countries supported",
               "Full scan history & audit logs",
             ].map(f => (

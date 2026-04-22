@@ -524,6 +524,21 @@ export default function ScanPage() {
                   ))}
                 </div>
 
+                {result.models_used && Object.keys(result.models_used).length > 0 && (
+                  <div className="scan-meta-grid" style={{ marginTop: "0.75rem" }}>
+                    {[
+                      { label: "Stage 1 · Doc Type", arch: result.models_used.doc_type },
+                      { label: "Stage 2 · Binary", arch: result.models_used.binary },
+                      { label: "Stage 3 · Fraud Type", arch: result.models_used.fraud_type },
+                    ].filter(m => m.arch).map(m => (
+                      <div className="scan-meta-card" key={m.label}>
+                        <span className="scan-meta-lbl">{m.label}</span>
+                        <span className="scan-meta-val">{m.arch.toUpperCase()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="scan-actions">
                   {result.scan_id && (
                     <button className="scan-download-btn" onClick={() => downloadReport(result.scan_id, result.image_private)}>

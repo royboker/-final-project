@@ -36,6 +36,8 @@ export const adminApi = {
   deleteUser: (token, userId) => request(`/admin/users/${userId}`, { method: "DELETE", token }),
   changeRole: (token, userId, role) => request(`/admin/users/${userId}/role`, { method: "PATCH", token, body: { role } }),
   getScans: (token) => request("/scans/all", { token }),
+  getPipelineModels: (token) => request("/scans/settings/pipeline-models", { token }),
+  setPipelineModels: (token, slots) => request("/scans/settings/pipeline-models", { method: "PUT", token, body: slots }),
 };
 
 export const chatApi = {
