@@ -95,6 +95,47 @@ class ViTFraudTypeClassifier(nn.Module):
         return self.classifier(self.vit(x))
 
 
+class DiTBinaryClassifier(nn.Module):
+    """DiT-Base (microsoft/dit-base) for binary forgery detection (Real vs Fake).
+    Uses vit_base_patch16_224 backbone with layer scale to match DiT/BEiT architecture."""
+    def __init__(self, num_classes=2, dropout=0.1):
+        super().__init__()
+        self.backbone = timm.create_model(
+            "vit_base_patch16_224", pretrained=False, num_classes=0, init_values=1e-5
+        )
+        num_features = 768
+        self.classifier = nn.Sequential(
+            nn.LayerNorm(num_features),
+            nn.Linear(num_features, num_features // 2),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(num_features // 2, num_classes),
+        )
+
+    def forward(self, x):
+        return self.classifier(self.backbone(x))
+
+
+class DiTFraudTypeClassifier(nn.Module):
+    """DiT-Base for fraud type classification (Morphing vs Replacement)."""
+    def __init__(self, num_classes=2, dropout=0.1):
+        super().__init__()
+        self.backbone = timm.create_model(
+            "vit_base_patch16_224", pretrained=False, num_classes=0, init_values=1e-5
+        )
+        num_features = 768
+        self.classifier = nn.Sequential(
+            nn.LayerNorm(num_features),
+            nn.Linear(num_features, num_features // 2),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(num_features // 2, num_classes),
+        )
+
+    def forward(self, x):
+        return self.classifier(self.backbone(x))
+
+
 # ── State Dict Loading ───────────────────────────────────────────────────────
 
 def _load_state(model, checkpoint):
@@ -132,6 +173,20 @@ def load_binary_model(path: str, device="cpu"):
 
 def load_fraud_type_model(path: str, device="cpu"):
     model = ViTFraudTypeClassifier()
+    ckpt = torch.load(path, map_location=device, weights_only=False)
+    _load_state(model, ckpt)
+    return model.to(device).eval()
+
+
+def load_dit_binary_model(path: str, device="cpu"):
+    model = DiTBinaryClassifier()
+    ckpt = torch.load(path, map_location=device, weights_only=False)
+    _load_state(model, ckpt)
+    return model.to(device).eval()
+
+
+def load_dit_fraud_type_model(path: str, device="cpu"):
+    model = DiTFraudTypeClassifier()
     ckpt = torch.load(path, map_location=device, weights_only=False)
     _load_state(model, ckpt)
     return model.to(device).eval()
