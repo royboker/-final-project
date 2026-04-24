@@ -75,6 +75,44 @@ Source: [Kaggle - IDNet Identity Document Analysis](https://www.kaggle.com/datas
 
 ---
 
+## Training Notebooks
+
+All training was done in Jupyter notebooks organized by task and stage.
+
+### Stage 1 — Document Type Classification (`notebooks/document_type_classification/`)
+
+Progressive experiments increasing training set size to measure accuracy vs data tradeoff:
+
+| Notebook | Model | Samples |
+|----------|-------|---------|
+| `resnet18/resnet18_baseline_1000.ipynb` | ResNet18 | 1,000 |
+| `resnet18/resnet18_baseline_2000.ipynb` | ResNet18 | 2,000 |
+| `resnet18/resnet18_baseline_3600.ipynb` | ResNet18 | 3,600 |
+| `resnet18/resnet18_baseline_5400.ipynb` | ResNet18 | 5,400 |
+| `resnet18/resnet18_baseline_9000.ipynb` | ResNet18 | 9,000 |
+| `resnet18/summery_results.ipynb` | — | comparison across runs |
+| `vit/vit_baseline_9000.ipynb` | ViT-Tiny | 9,000 |
+| `dataset_overview.ipynb` | — | data exploration & visualization |
+
+### Stage 2+3 — Forgery Detection (`notebooks/<doctype>_forgery/`)
+
+Each document type has its own set of forgery detection notebooks split into `experiments/` (early iterations) and `production/` (final trained models).
+
+**Passport** (`passport_forgery/production/`)
+- `vit_binary_improved_20k.ipynb` — Real/Fake with ViT-Small (20k images)
+- `vit_fraud_type_20k.ipynb` — Morphing/Replacement with ViT-Small
+- `dit_binary_20k.ipynb` — Real/Fake with DiT-Base
+- `dit_fraud_type_20k.ipynb` — Morphing/Replacement with DiT-Base
+
+**ID Card** (`id_card_forgery/production/`)
+- Same 4 notebooks as passport, 20k images each
+
+**Driver License** (`drivers_license_forgery/`)
+- `experiments/` — early ViT binary + multi-task attempts (9,996 images)
+- `production/` — final ViT-Small and DiT-Base models (15k images each)
+
+---
+
 ## Tech Stack
 
 **ML**
