@@ -1,186 +1,208 @@
-# 🛂 Identity Document Fraud Detection - Final Project
+# DocuGuard — Identity Document Fraud Detection
 
-## 🎯 Project Overview
+An end-to-end AI platform for detecting forged identity documents. Combines a 3-stage deep learning pipeline with a full-stack web application.
 
-This project focuses on **Identity Document Fraud Detection** using machine learning and deep learning techniques. The goal is to develop models that can accurately identify forged identity documents across different types (passports, ID cards, driver's licenses) and fraud techniques.
+---
 
-## 📊 Datasets
+## Pipeline Overview
 
-### IDNet Dataset
-- **Source**: [Kaggle - IDNet Identity Document Analysis](https://www.kaggle.com/datasets/chitreshkr/idnet-identity-document-analysis)
-- **Size**: ~130GB+ (290,000+ images and expanding)
-- **Countries**: 9+ (Albania, Greece, Russia, Latvia, Slovakia, Nevada, Washington DC, Arizona, West Virginia)
-- **Document Types**: Passports, ID Cards, Driver's Licenses
-- **Fraud Types**: 6 different fraud techniques
-- **Location**: `datasets/idnet/`
+Document verification runs in three sequential stages:
 
-### Key Features
-- **Real vs Fake**: Balanced dataset with authentic and forged documents
-- **Multi-Country**: Documents from different countries and languages
-- **Rich Metadata**: Personal information and detailed fraud annotations
-- **Unified Format**: Processed into CSV files for easy model training
+```
+Image Input
+    │
+    ▼
+Stage 1 — Document Type Classification
+    ViT-Tiny or ResNet18
+    → ID Card / Passport / Driver License
+    │
+    ▼
+Stage 2 — Forgery Detection
+    ViT-Small or DiT-Base  (model specific to detected doc type)
+    → Real → done
+    → Fake → continue
+    │
+    ▼
+Stage 3 — Fraud Type Classification
+    ViT-Small or DiT-Base  (only runs if Stage 2 = Fake)
+    → Morphing / Replacement
+    │
+    ▼
+Verdict: "Real" / "Fake - Morphing" / "Fake - Replacement"
+```
 
-## 🏗️ Project Structure
+**Morphing** — two faces blended into one image (both people can pass with the same document).  
+**Replacement** — photo or data field swapped on a genuine document.
+
+---
+
+## Models
+
+14 trained `.pth` checkpoints stored in `models/final_models/`:
+
+| Role | Architecture | File |
+|------|-------------|------|
+| Document type classifier | ViT-Tiny | `vit_document_classifier_9k.pth` |
+| Document type classifier | ResNet18 | `resnet18_document_classifier_9k.pth` |
+| Passport forgery (binary) | ViT-Small | `vit_passport_binary_20k.pth` |
+| Passport fraud type | ViT-Small | `vit_passport_fraud_type_20k.pth` |
+| ID Card forgery (binary) | ViT-Small | `vit_id_card_binary_20k.pth` |
+| ID Card fraud type | ViT-Small | `vit_id_card_fraud_type_20k.pth` |
+| Driver License forgery (binary) | ViT-Small | `vit_drivers_license_binary_15k.pth` |
+| Driver License fraud type | ViT-Small | `vit_drivers_license_fraud_type_15k.pth` |
+| Passport forgery (binary) | DiT-Base | `dit_passport_binary_20k.pth` |
+| Passport fraud type | DiT-Base | `dit_passport_fraud_type_20k.pth` |
+| ID Card forgery (binary) | DiT-Base | `dit_id_card_binary_20k.pth` |
+| ID Card fraud type | DiT-Base | `dit_id_card_fraud_type_20k.pth` |
+| Driver License forgery (binary) | DiT-Base | `dit_drivers_license_binary_15k.pth` |
+| Driver License fraud type | DiT-Base | `dit_drivers_license_fraud_type_15k.pth` |
+
+The number suffix (9k / 20k / 15k) reflects training set size. Stage 2 and 3 use **Test-Time Augmentation** (4 views averaged) for more stable predictions.
+
+Admins can switch the active architecture per pipeline slot (ViT ↔ DiT) from the dashboard without redeployment.
+
+---
+
+## Dataset
+
+**IDNet** — ~130GB, 290,000+ images  
+Source: [Kaggle - IDNet Identity Document Analysis](https://www.kaggle.com/datasets/chitreshkr/idnet-identity-document-analysis)
+
+- 9 countries: Albania, Greece, Russia, Latvia, Slovakia, Nevada, Washington DC, Arizona, West Virginia
+- Document types: Passports, ID Cards, Driver Licenses
+- Labels: Real / Fake, fraud type per image
+- Not tracked in git — see `SETUP.md` for download instructions
+
+---
+
+## Tech Stack
+
+**ML**
+- PyTorch + timm (ViT models), torchvision (ResNet)
+- Albumentations (transforms + TTA)
+- Training in Jupyter notebooks (`notebooks/document_type_classification/`)
+
+**Backend** — `backend/`
+- FastAPI + uvicorn
+- MongoDB (Atlas) via pymongo
+- JWT authentication (argon2 password hashing)
+- Cloudinary for image storage
+- PDF report generation with ReportLab
+- Google OAuth
+
+**Frontend** — `frontend/`
+- React 18 + Vite
+- React Router, Recharts
+- Real-time chat (user ↔ admin)
+- Dark/light theme
+
+**Tests** — `tests/`
+- `tests/backend/` — pytest + FastAPI TestClient (57 tests)
+- `tests/e2e/` — Playwright (27 tests, Chromium)
+
+---
+
+## Project Structure
 
 ```
 final-project/
-│
-├── datasets/              # All datasets and processed data
-│   ├── idnet/            # IDNet dataset (raw + processed)
-│   │   ├── ALB/          # Albanian passports
-│   │   ├── GRC/          # Greek passports
-│   │   ├── RUS/          # Russian ID cards  
-│   │   ├── WV/           # West Virginia driver's licenses
-│   │   ├── DC/           # Washington DC driver's licenses
-│   │   ├── NV/           # Nevada ID cards
-│   │   ├── LVA/          # Latvian passports
-│   │   ├── SVK/          # Slovakian ID cards
-│   │   ├── AZ/           # Arizona driver's licenses
-│   │   ├── document_type_classification_country_split/  # Document type dataset
-│   │   └── README.md     # IDNet dataset documentation
-│   ├── examples/         # Sample data for demonstration
-│   │   └── README.md     # Examples documentation
-│   └── README.md         # General dataset documentation
-│
-├── notebooks/            # Jupyter notebooks for experiments
-│   └── document_type_classification/  # Document type classification experiments
-│       ├── dataset_overview.ipynb     # Dataset analysis and visualization
-│       ├── template.ipynb             # Template for new experiments
-│       ├── resnet18/                  # ResNet18 experiments
-│       │   ├── resnet18_baseline_500.ipynb
-│       │   ├── resnet18_baseline_1000.ipynb
-│       │   ├── resnet18_baseline_2000.ipynb
-│       │   └── resnet18_baseline_3600.ipynb
-│       └── vit/                       # Vision Transformer experiments
-│           └── vit_baseline_500.ipynb
-│
-├── src/                  # Source code
-│   ├── data/            # Data processing and loading scripts
-│   │   ├── create_unified_*.py           # Country-specific dataset creation
-│   │   ├── create_document_type_dataset.py  # Document type dataset
-│   │   ├── prepare_idnet_full_dataset.py    # Full IDNet dataset preparation
-│   │   ├── fix_dataset_splits.py         # Fix train/val/test splits
-│   │   ├── split_dataset.py              # Dataset splitting utilities
-│   │   ├── load_idnet_dataset.py         # Dataset loading utilities
-│   │   └── explore_idnet.py              # Data exploration tools
-│   ├── models/          # Model architectures
-│   │   └── cnn_models.py                 # CNN models (ResNet, EfficientNet, etc.)
-│   ├── training/        # Training scripts
-│   └── utils/           # Utility functions
-│
-├── models/              # Trained models
-│   ├── checkpoints/     # Model checkpoints during training
-│   └── README.md        # Model documentation
-│
-├── backend/               # FastAPI Backend
-│   ├── app/
-│   │   ├── models/       # Database schemas & Pydantic models
-│   │   ├── routers/      # API Endpoints
-│   │   ├── services/     # Business logic (ML, Cloudinary)
-│   │   ├── main.py       # Application entry point
-│   │   └── database.py   # DB Connection
-│   ├── PLAN.md           # Backend technical plan
-│   └── requirements.txt  # Python dependencies
-│
-├── frontend/              # React Frontend
+├── notebooks/                  # Training experiments
+│   └── document_type_classification/
+│       ├── resnet18/           # Stage 1 ResNet18 training
+│       ├── vit/                # Stage 1 ViT-Tiny training
+│       └── dit/                # Stage 2+3 DiT-Base training
+├── models/
+│   └── final_models/           # 14 trained .pth checkpoints
+├── demo/
+│   └── model_loader.py         # Model classes + inference functions
+├── src/
+│   └── data/                   # Dataset preparation scripts
+├── backend/
+│   ├── main.py                 # FastAPI entry point
+│   ├── routes/                 # auth, scan, admin, chat
+│   ├── utils/                  # model_loader, email
+│   ├── db/                     # MongoDB collections
+│   └── requirements.txt
+├── frontend/
 │   ├── src/
-│   │   ├── components/   # Reusable UI parts
-│   │   ├── pages/        # Main views (Dashboard, Analyze)
-│   │   ├── context/      # State management
-│   │   └── App.jsx       # Main component & Routing
-│   ├── PLAN.md           # Frontend technical plan
-│   └── package.json      # JS dependencies
-│
-├── results/             # Experiment results
-│   ├── figures/         # Visualizations
-│   └── logs/            # Training logs
-│
-├── requirements.txt     # Python dependencies
-├── .gitignore          # Git ignore rules
-└── README.md           # This file
+│   │   ├── pages/              # Login, Register, Dashboard, Scan, Admin
+│   │   ├── components/         # Navbar, ChatWidget, ScanDemo
+│   │   └── context/            # Auth, Chat, Theme
+│   └── package.json
+├── tests/
+│   ├── backend/                # pytest test suite
+│   └── e2e/                    # Playwright E2E tests
+├── datasets/                   # gitignored — download separately
+├── SETUP.md
+├── DEPLOYMENT.md
+└── TECH_STACK.md
 ```
 
-## Setup Instructions
+---
 
-### 1. Create Virtual Environment (Recommended)
+## Running Locally
 
+**Backend**
 ```bash
-# Create virtual environment
-python -m venv venv
+cd backend
+# Windows
+..\venv\Scripts\Activate.ps1
+# macOS/Linux
+source ../venv/bin/activate
 
-# Activate virtual environment
-# On macOS/Linux:
-source venv/bin/activate
-# On Windows:
-# venv\Scripts\activate
+uvicorn main:app --port 8000 --reload
 ```
 
-### 2. Install Dependencies
-
+**Frontend**
 ```bash
-pip install --upgrade pip
-pip install -r requirements.txt
+cd frontend
+npm install
+npm run dev        # http://localhost:5173
 ```
 
-### 3. Setup Jupyter Kernel
-
+**Backend tests**
 ```bash
-python -m ipykernel install --user --name=final-project --display-name "Python (Final Project)"
+cd tests/backend
+pytest -v
 ```
 
-## 🚀 Getting Started
+**E2E tests** (requires backend running on 8000)
+```bash
+cd tests/e2e
+npx playwright test --project=chromium
+```
 
-### Quick Start
-1. **Explore the Data**: Start with `notebooks/document_type_classification/dataset_overview.ipynb`
-2. **Check Examples**: Look at `datasets/examples/` for sample data
-3. **Load Processed Data**: Use the unified CSV files in `datasets/idnet/`
-4. **Train Models**: Use the notebooks in `notebooks/document_type_classification/` for model training
-5. **Build Custom Models**: Create fraud detection models using the processed data
+---
 
+## API Endpoints
 
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/auth/register` | Register new user |
+| POST | `/auth/login` | Login |
+| GET | `/auth/me` | Current user profile |
+| POST | `/scans/classify` | Classify doc type (single model) |
+| POST | `/scans/analyze` | Full 3-stage pipeline |
+| GET | `/scans/my` | User scan history |
+| GET | `/scans/{id}/report` | Download PDF report |
+| GET | `/admin/stats` | Platform statistics (admin) |
+| GET | `/admin/users` | User management (admin) |
+| GET/PUT | `/scans/settings/pipeline-models` | Active model config (admin) |
 
-## 🛠️ Key Libraries
+---
 
-- **Data Science**: NumPy, Pandas, SciPy
-- **Machine Learning**: Scikit-learn, XGBoost
-- **Deep Learning**: TensorFlow, PyTorch
-- **Computer Vision**: OpenCV, Pillow, Albumentations
-- **Visualization**: Matplotlib, Seaborn, Plotly
-- **Image Processing**: PIL, OpenCV
-- **Data Validation**: Great Expectations
+## Environment Variables
 
-## 📈 Project Goals
+Create `backend/.env` (see `backend/env.example`):
 
-### Phase 1: Document Type Classification (Current Focus)
-1. **Multi-Class Classification**: Classify documents into types (Passport, ID Card, Driver's License)
-2. **Cross-Country Analysis**: Train on multiple countries, test generalization
-3. **Model Comparison**: Compare different architectures (ResNet, ViT, EfficientNet)
-
-### Phase 2: Fraud Detection (Future)
-1. **Binary Classification**: Real vs Fake documents
-2. **Multi-Class Classification**: Identify specific fraud types
-3. **Cross-Country Generalization**: Model performance across different countries
-4. **Fraud Type Detection**: Identify specific fraud techniques
-
-## 🔬 Research Questions
-
-- Which fraud types are most detectable?
-- How does model performance vary across countries?
-- Can models generalize across document types?
-- What features are most important for fraud detection?
-
-## 📝 Best Practices
-
-- **Data Quality**: All datasets have been cleaned and validated
-- **Version Control**: Use git for code, consider DVC for large files
-- **Documentation**: Document experiments and model performance
-- **Reproducibility**: Use fixed random seeds and save model states
-- **Evaluation**: Use appropriate metrics for imbalanced datasets
-
-## ⚠️ Important Notes
-
-- **Large Files**: Raw datasets (~49GB) are excluded from git
-- **Processing**: Use the provided scripts to recreate processed data
-- **Examples**: Check `datasets/examples/` for sample data structure
-- **Metadata**: Rich personal information available for each document
-
+```
+MONGODB_URI=
+JWT_SECRET=
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+FRONTEND_URL=http://localhost:5173
+ALLOWED_ORIGINS=http://localhost:5173
+```
