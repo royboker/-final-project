@@ -28,7 +28,8 @@ LABEL_MAP = DOC_TYPE_LABELS
 # ── Model Architectures ──────────────────────────────────────────────────────
 
 class ViTTinyClassifier(nn.Module):
-    """ViT-Tiny for document type classification (3 classes)."""
+    """ViT-Tiny (timm-backed) for document type classification (3 classes).
+    Checkpoint keys: vit.cls_token, vit.pos_embed, vit.blocks.<i>.*, vit.norm.*, head.1.*"""
     def __init__(self, num_classes=3, dropout=0.2):
         super().__init__()
         self.vit = timm.create_model("vit_tiny_patch16_224", pretrained=False, num_classes=0)
@@ -42,21 +43,19 @@ class ViTTinyClassifier(nn.Module):
 
 
 class ResNet18Classifier(nn.Module):
-    """ResNet18 for document type classification (3 classes)."""
+    """ResNet-18 head for document-type classification. Checkpoint stores the
+    backbone under `resnet.*` and the head as Sequential(Dropout, Linear(feat_dim, num_classes))."""
     def __init__(self, num_classes=3, dropout=0.3):
         super().__init__()
-        self.backbone = resnet18(weights=None)
-        feat_dim = self.backbone.fc.in_features
-        self.backbone.fc = nn.Sequential(
+        self.resnet = resnet18(weights=None)
+        feat_dim = self.resnet.fc.in_features
+        self.resnet.fc = nn.Sequential(
             nn.Dropout(dropout),
-            nn.Linear(feat_dim, 256),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(256, num_classes),
+            nn.Linear(feat_dim, num_classes),
         )
 
     def forward(self, x):
-        return self.backbone(x)
+        return self.resnet(x)
 
 
 class ViTBinaryClassifier(nn.Module):
@@ -144,7 +143,15 @@ def _load_state(model, checkpoint):
         state = checkpoint[key] if key else checkpoint
     else:
         state = checkpoint
-    model.load_state_dict(state, strict=False)
+    missing, unexpected = model.load_state_dict(state, strict=False)
+    if missing or unexpected:
+        import warnings
+        warnings.warn(
+            f"State-dict mismatch loading {type(model).__name__}: "
+            f"{len(missing)} missing, {len(unexpected)} unexpected. "
+            f"missing[:3]={list(missing)[:3]}  unexpected[:3]={list(unexpected)[:3]}",
+            RuntimeWarning,
+        )
     return model
 
 

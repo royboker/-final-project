@@ -75,3 +75,10 @@ notebooks/id_card_forgery/production/dit_binary_20k.pth
 notebooks/id_card_forgery/production/dit_fraud_type_20k.pth
 notebooks/passport_forgery/production/dit_binary_20k.pth
 notebooks/passport_forgery/production/dit_fraud_type_20k.pth
+
+/remotion/
+/remotion/node_modules/
+/remotion/out/
+/remotion/.remotion/
+/remotion/*.log
+/remotion/.DS_Store
