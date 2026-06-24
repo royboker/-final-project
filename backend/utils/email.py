@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
-MAIL_FROM_EMAIL = os.getenv("MAIL_FROM_EMAIL", "noamkadosh4444@gmail.com")
+MAIL_FROM_EMAIL = os.getenv("MAIL_FROM_EMAIL", "noreply@example.com")
 MAIL_FROM_NAME = os.getenv("MAIL_FROM_NAME", "DocuGuard")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
