@@ -8,6 +8,25 @@ import "./AdminDashboard.css";
 
 import { API_URL, WS_URL } from "../config.js";
 
+// ── Pipeline slot metadata (admin can pick arch per slot) ────────────────────
+const FORGERY_OPTIONS = [
+  { id: "vit", label: "ViT-Small", sub: "Vision Transformer (ImageNet)" },
+  { id: "dit", label: "DiT-Base",  sub: "Document Image Transformer" },
+];
+const DOC_OPTIONS = [
+  { id: "vit",      label: "ViT-Tiny",  sub: "Vision Transformer" },
+  { id: "resnet18", label: "ResNet-18", sub: "Residual Network" },
+];
+const PIPELINE_SLOTS = [
+  { id: "doc_type",                   label: "Stage 1 — Document Type",        options: DOC_OPTIONS },
+  { id: "passport_binary",            label: "Passport — Real / Fake",          options: FORGERY_OPTIONS },
+  { id: "passport_fraud_type",        label: "Passport — Fraud Type",           options: FORGERY_OPTIONS },
+  { id: "id_card_binary",             label: "ID Card — Real / Fake",           options: FORGERY_OPTIONS },
+  { id: "id_card_fraud_type",         label: "ID Card — Fraud Type",            options: FORGERY_OPTIONS },
+  { id: "drivers_license_binary",     label: "Driver License — Real / Fake",   options: FORGERY_OPTIONS },
+  { id: "drivers_license_fraud_type", label: "Driver License — Fraud Type",    options: FORGERY_OPTIONS },
+];
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { user, token } = useAuth();
@@ -15,6 +34,8 @@ export default function AdminDashboard() {
   const toast = useToast();
   const [stats, setStats] = useState(null);
   const [defaultModel, setDefaultModel] = useState("vit");
+  const [activeModels, setActiveModels] = useState(null);
+  const [savingSlot, setSavingSlot] = useState(null);
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -72,6 +93,12 @@ export default function AdminDashboard() {
       .catch(() => {});
   }, [token]);
 
+  useEffect(() => {
+    adminApi.getPipelineModels(token)
+      .then(setActiveModels)
+      .catch(() => {});
+  }, [token]);
+
   const saveDefaultModel = async (model) => {
     setDefaultModel(model);
     await fetch(`${API_URL}/scans/settings/model`, {
@@ -80,6 +107,23 @@ export default function AdminDashboard() {
       body: JSON.stringify({ model }),
     });
     toast({ message: `Default model set to ${model === "vit" ? "ViT" : "ResNet-18"}`, type: "success" });
+  };
+
+  const savePipelineSlot = async (slot, arch) => {
+    if (!activeModels || activeModels[slot] === arch) return;
+    const prev = activeModels;
+    setActiveModels({ ...activeModels, [slot]: arch });
+    setSavingSlot(slot);
+    try {
+      const updated = await adminApi.setPipelineModels(token, { [slot]: arch });
+      setActiveModels(updated);
+      toast({ message: `${PIPELINE_SLOTS.find(s => s.id === slot)?.label ?? slot} → ${arch.toUpperCase()}`, type: "success" });
+    } catch (err) {
+      setActiveModels(prev);
+      toast({ message: err.message || "Failed to save model selection", type: "error" });
+    } finally {
+      setSavingSlot(null);
+    }
   };
 
   useEffect(() => {
@@ -331,26 +375,63 @@ export default function AdminDashboard() {
             <div className="admin-chart-card">
               <h3>Pipeline Models</h3>
               <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginBottom: "1.25rem" }}>
-                7 models power the 3-stage analysis pipeline
+                Select the active model architecture for each of the 7 pipeline slots. Applies to every user's scan.
               </p>
-              <div className="admin-model-list">
-                {[
-                  { role: "Doc Type Classifier", type: "ViT-Tiny", classes: "3 classes", status: "active" },
-                  { role: "Passport — Real/Fake", type: "ViT-Small", classes: "2 classes", status: "active" },
-                  { role: "Passport — Fraud Type", type: "ViT-Small", classes: "2 classes", status: "active" },
-                  { role: "ID Card — Real/Fake", type: "ViT-Small", classes: "2 classes", status: "active" },
-                  { role: "ID Card — Fraud Type", type: "ViT-Small", classes: "2 classes", status: "active" },
-                  { role: "Driver License — Real/Fake", type: "ViT-Small", classes: "2 classes", status: "active" },
-                  { role: "Driver License — Fraud Type", type: "ViT-Small", classes: "2 classes", status: "active" },
-                ].map((m, i) => (
-                  <div key={i} className="admin-model-row">
-                    <span className="admin-model-name">{m.role}</span>
-                    <span className="admin-model-type">{m.type}</span>
-                    <span className="admin-model-classes">{m.classes}</span>
-                    <span className="admin-model-status">Active</span>
-                  </div>
-                ))}
-              </div>
+              {!activeModels ? (
+                <div style={{ color: "#52525b", fontSize: "0.85rem", padding: "1rem 0" }}>Loading settings…</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  {PIPELINE_SLOTS.map(slot => {
+                    const current = activeModels[slot.id];
+                    const isSaving = savingSlot === slot.id;
+                    return (
+                      <div
+                        key={slot.id}
+                        style={{
+                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                          padding: "0.9rem 1rem", borderRadius: "10px",
+                          border: "1px solid var(--border)", background: "var(--card)",
+                          flexWrap: "wrap", gap: "0.75rem",
+                        }}
+                      >
+                        <div style={{ minWidth: 0, flex: "1 1 220px" }}>
+                          <div style={{ fontWeight: 600, color: "#e4e4e7", fontSize: "0.92rem" }}>{slot.label}</div>
+                          <div style={{ fontSize: "0.75rem", color: "#71717a", marginTop: "0.15rem" }}>
+                            Active: <span style={{ color: "#a3e635", fontWeight: 600 }}>{current?.toUpperCase()}</span>
+                            {isSaving && <span style={{ marginLeft: "0.5rem", color: "#71717a" }}>saving…</span>}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: "0.4rem" }}>
+                          {slot.options.map(opt => {
+                            const isActive = current === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                onClick={() => savePipelineSlot(slot.id, opt.id)}
+                                disabled={isSaving || isActive}
+                                title={opt.sub}
+                                style={{
+                                  minWidth: 88, padding: "0.5rem 0.85rem", borderRadius: "8px",
+                                  cursor: isActive ? "default" : "pointer",
+                                  border: isActive ? "2px solid #a3e635" : "2px solid var(--border)",
+                                  background: isActive ? "rgba(163,230,53,0.08)" : "transparent",
+                                  color: isActive ? "#a3e635" : "var(--muted)",
+                                  fontWeight: isActive ? 700 : 500,
+                                  fontSize: "0.82rem", fontFamily: "inherit",
+                                  opacity: isSaving && !isActive ? 0.5 : 1,
+                                  transition: "all 0.15s",
+                                }}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}

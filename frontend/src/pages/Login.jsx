@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
 import { useAuth } from "../context/AuthContext";
@@ -13,6 +13,14 @@ export default function Login() {
   const [error, setError] = useState("");
 
   const { setSession } = useAuth();
+  const [stats, setStats] = useState({ total_users: 0, total_scans: 0, forged: 0, authentic: 0 });
+
+  useEffect(() => {
+    fetch(`${API_URL}/scans/public/stats`)
+      .then(r => r.json())
+      .then(d => setStats(d))
+      .catch(() => {});
+  }, []);
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -184,12 +192,12 @@ export default function Login() {
 
           <div className="auth-stats">
             {[
-              { num: "50M+", label: "Docs scanned" },
-              { num: "97%", label: "Accuracy" },
-              { num: "99.9%", label: "Uptime" },
+              { value: stats.total_scans, label: "Docs scanned" },
+              { value: stats.authentic,   label: "Authentic" },
+              { value: stats.forged,      label: "Forged detected" },
             ].map((s) => (
               <div className="auth-stat" key={s.label}>
-                <span className="auth-stat-num">{s.num}</span>
+                <span className="auth-stat-num"><AnimatedCounter value={s.value} /></span>
                 <span className="auth-stat-label">{s.label}</span>
               </div>
             ))}
@@ -198,6 +206,44 @@ export default function Login() {
       </div>
     </div>
   );
+}
+
+// ── Animated counter (matches landing page) ────────────────────────────────────
+function AnimatedCounter({ value, duration = 1500 }) {
+  const [display, setDisplay] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || value === 0) return;
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true;
+          const start = performance.now();
+          function tick(now) {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setDisplay(Math.round(eased * value));
+            if (progress < 1) requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [value, duration]);
+
+  useEffect(() => {
+    started.current = false;
+    setDisplay(0);
+  }, [value]);
+
+  return <span ref={ref}>{display.toLocaleString()}</span>;
 }
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
